@@ -7,6 +7,7 @@ import { useRooms } from "@/hooks/queries/useRooms";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
+import { SeasonManager } from "@/components/SeasonManager";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading: authLoading } = useAuth();
@@ -87,6 +88,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-[100dvh] flex flex-col md:flex-row bg-slate-950">
+      <SeasonManager />
 
       {/* Desktop Sidebar (hidden on mobile) */}
       <aside className="hidden md:flex flex-col w-72 border-r border-white/5 bg-slate-950/50 backdrop-blur-xl">

@@ -2,7 +2,7 @@
 
 import { useAtomValue } from "jotai";
 import { currentRoomIdAtom } from "@/store/atoms";
-import { useRoom, useRoomMembers } from "@/hooks/queries/useRooms";
+import { useRoom, useRoomMembers, useRoomTrophies } from "@/hooks/queries/useRooms";
 import { useLeaderboard } from "@/hooks/queries/useTasks";
 import { useEndPeriod, useRemoveMember, useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useAuth } from "@/hooks/useAuth";
@@ -14,6 +14,7 @@ export default function LeaderboardPage() {
 
   const { data: room, isLoading: roomLoading } = useRoom(roomId);
   const { data: members, isLoading: membersLoading } = useRoomMembers(roomId);
+  const { data: trophies, isLoading: trophiesLoading } = useRoomTrophies(roomId);
   const { data: leaderboard, isLoading: leaderboardLoading } = useLeaderboard(
     roomId,
     room?.current_period_start_date
@@ -28,7 +29,7 @@ export default function LeaderboardPage() {
   const [editContribution, setEditContribution] = useState("");
   const [editDuration, setEditDuration] = useState("");
 
-  if (!roomId || roomLoading || membersLoading) {
+  if (!roomId || roomLoading || membersLoading || trophiesLoading) {
     return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto"/></div>;
   }
 
@@ -50,6 +51,7 @@ export default function LeaderboardPage() {
       fullName,
       avatarUrl: profile?.avatar_url || lbEntry?.avatarUrl,
       points,
+      trophies: trophies?.get(m.user_id) || 0,
     };
   });
 
@@ -59,6 +61,28 @@ export default function LeaderboardPage() {
   } else {
     // Alphabetical
     mergedMembers.sort((a, b) => a.fullName.localeCompare(b.fullName));
+  }
+
+  // Grand Drop countdown
+  let timeLeftStr = "";
+  if (room?.current_period_start_date && room?.period_duration_days) {
+    const startDate = new Date(room.current_period_start_date);
+    const endDate = new Date(startDate.getTime() + room.period_duration_days * 24 * 60 * 60 * 1000);
+    const now = new Date();
+    const diffTime = endDate.getTime() - now.getTime();
+    
+    if (diffTime > 0) {
+      const daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const hoursLeft = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
+      timeLeftStr = daysLeft > 0 
+        ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left for the GRAND DROP`
+        : hoursLeft > 0 
+          ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left for the GRAND DROP`
+          : "Ends today!";
+    } else {
+      timeLeftStr = "Season Expired!";
+    }
   }
 
   return (
@@ -131,6 +155,13 @@ export default function LeaderboardPage() {
             <p className="text-[10px] text-brand-300/50 uppercase tracking-widest font-semibold">
               {room?.period_duration_days} Day Period
             </p>
+            {timeLeftStr && (
+              <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-brand-500/30">
+                <p className="text-xs font-bold text-brand-400 uppercase tracking-wider">
+                  {timeLeftStr}
+                </p>
+              </div>
+            )}
             {isAdmin && (
               <button
                 onClick={() => {
@@ -216,7 +247,7 @@ export default function LeaderboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[15px] font-semibold text-white truncate break-words">
-                          {entry.fullName}
+                          {entry.fullName} {entry.trophies > 0 && <span className="ml-1 text-sm bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded-md font-bold">🏆 ({entry.trophies})</span>}
                           {isMe && <span className="ml-2 text-[10px] text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider">You</span>}
                           {entry.role === "admin" && <span className="ml-2 text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">Admin</span>}
                         </p>
