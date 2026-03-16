@@ -123,6 +123,7 @@ export function useEditTaskTemplate() {
       pointsReward,
       recurrencePattern,
       spawnOnCompletion,
+      startDate,
     }: {
       templateId: string;
       title: string;
@@ -130,6 +131,7 @@ export function useEditTaskTemplate() {
       pointsReward: number;
       recurrencePattern: { type: string; days?: number[] };
       spawnOnCompletion: boolean;
+      startDate?: string;
     }) => {
       // 1. Update the parent template
       const { data: template, error: updateError } = await supabase
@@ -147,6 +149,16 @@ export function useEditTaskTemplate() {
         
       if (updateError) throw updateError;
 
+      // 1.5 Fetch current pending instances with assignments
+      const { data: pendingInstances } = await supabase
+        .from("task_instances")
+        .select("assigned_user_id")
+        .eq("template_id", templateId)
+        .eq("status", "pending")
+        .order("due_date", { ascending: true });
+        
+      const assignments = pendingInstances?.map(p => p.assigned_user_id) || [];
+
       // 2. Delete all current PENDING instances belonging to this template
       const { error: deleteError } = await supabase
         .from("task_instances")
@@ -159,11 +171,36 @@ export function useEditTaskTemplate() {
       // 3. Regenerate new pending instances based on the new rules
       const { error: genError } = await supabase.rpc("generate_task_instances", {
         p_template_id: template.id,
-        p_start_date: new Date().toISOString(),
+        p_start_date: startDate || new Date().toISOString(),
         p_count: recurrencePattern.type === "none" || spawnOnCompletion ? 1 : 4,
       });
 
       if (genError) throw genError;
+
+      // 4. Reapply assignments to newly generated instances
+      if (assignments.some(a => a !== null)) {
+        const { data: newInstances } = await supabase
+          .from("task_instances")
+          .select("id")
+          .eq("template_id", templateId)
+          .eq("status", "pending")
+          .order("due_date", { ascending: true });
+          
+        if (newInstances) {
+          const updates = [];
+          for (let i = 0; i < Math.min(assignments.length, newInstances.length); i++) {
+            if (assignments[i] !== null) {
+              updates.push(
+                supabase
+                  .from("task_instances")
+                  .update({ assigned_user_id: assignments[i] })
+                  .eq("id", newInstances[i].id)
+              );
+            }
+          }
+          await Promise.all(updates);
+        }
+      }
 
       return template;
     },
@@ -186,6 +223,7 @@ export function useCreateTaskTemplate() {
       recurrencePattern,
       spawnOnCompletion,
       userId,
+      startDate,
     }: {
       roomId: string;
       title: string;
@@ -194,6 +232,7 @@ export function useCreateTaskTemplate() {
       recurrencePattern: { type: string; days?: number[] };
       spawnOnCompletion: boolean;
       userId: string;
+      startDate?: string;
     }) => {
       // Create template
       const { data: template, error: templateError } = await supabase
@@ -215,7 +254,7 @@ export function useCreateTaskTemplate() {
       // Generate instances
       const { error: genError } = await supabase.rpc("generate_task_instances", {
         p_template_id: template.id,
-        p_start_date: new Date().toISOString(),
+        p_start_date: startDate || new Date().toISOString(),
         p_count: recurrencePattern.type === "none" || spawnOnCompletion ? 1 : 4,
       });
 
