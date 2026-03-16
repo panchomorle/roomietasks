@@ -16,7 +16,7 @@ export function useTaskInstances(
     queryFn: async () => {
       let query = supabase
         .from("task_instances")
-        .select("*, profiles!task_instances_assigned_user_id_profiles_fkey(full_name, avatar_url), completer:profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url)")
+        .select("*, profiles!task_instances_assigned_user_id_profiles_fkey(full_name, avatar_url), completer:profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url), template:task_templates(*)")
         .eq("room_id", roomId!)
         .eq("status", "pending")
         .order("due_date", { ascending: true });

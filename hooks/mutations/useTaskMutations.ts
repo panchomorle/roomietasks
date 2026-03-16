@@ -111,6 +111,68 @@ export function useDeleteTask() {
   });
 }
 
+export function useEditTaskTemplate() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      templateId,
+      title,
+      description,
+      pointsReward,
+      recurrencePattern,
+      spawnOnCompletion,
+    }: {
+      templateId: string;
+      title: string;
+      description: string;
+      pointsReward: number;
+      recurrencePattern: { type: string; days?: number[] };
+      spawnOnCompletion: boolean;
+    }) => {
+      // 1. Update the parent template
+      const { data: template, error: updateError } = await supabase
+        .from("task_templates")
+        .update({
+          title,
+          description,
+          points_reward: pointsReward,
+          recurrence_pattern: recurrencePattern as any,
+          spawn_on_completion: spawnOnCompletion,
+        } as any)
+        .eq("id", templateId)
+        .select()
+        .single();
+        
+      if (updateError) throw updateError;
+
+      // 2. Delete all current PENDING instances belonging to this template
+      const { error: deleteError } = await supabase
+        .from("task_instances")
+        .delete()
+        .eq("template_id", templateId)
+        .eq("status", "pending");
+
+      if (deleteError) throw deleteError;
+      
+      // 3. Regenerate new pending instances based on the new rules
+      const { error: genError } = await supabase.rpc("generate_task_instances", {
+        p_template_id: template.id,
+        p_start_date: new Date().toISOString(),
+        p_count: recurrencePattern.type === "none" || spawnOnCompletion ? 1 : 4,
+      });
+
+      if (genError) throw genError;
+
+      return template;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-instances"] });
+    },
+  });
+}
+
 export function useCreateTaskTemplate() {
   const supabase = createClient();
   const queryClient = useQueryClient();
