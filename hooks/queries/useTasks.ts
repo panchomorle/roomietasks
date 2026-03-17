@@ -83,7 +83,7 @@ export function useLeaderboard(roomId: string | null, periodStart: string | unde
       // Aggregate points per user
       const pointsMap = new Map<
         string,
-        { userId: string; points: number; fullName: string | null; avatarUrl: string | null; email: string | null }
+        { userId: string; points: number; tasksCompleted: number; fullName: string | null; avatarUrl: string | null; email: string | null }
       >();
 
       for (const row of data) {
@@ -93,10 +93,12 @@ export function useLeaderboard(roomId: string | null, periodStart: string | unde
         const profile = row.profiles as unknown as { full_name: string | null; avatar_url: string | null; email: string | null } | null;
         if (existing) {
           existing.points += row.points_reward;
+          existing.tasksCompleted += 1;
         } else {
           pointsMap.set(uid, {
             userId: uid,
             points: row.points_reward,
+            tasksCompleted: 1,
             fullName: profile?.full_name ?? null,
             avatarUrl: profile?.avatar_url ?? null,
             email: profile?.email ?? null,

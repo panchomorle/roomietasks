@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRooms } from "@/hooks/queries/useRooms";
+import { useEndPeriod } from "@/hooks/mutations/useTaskMutations";
 import { EndSeasonModal } from "./EndSeasonModal";
 import { Tables } from "@/types/database";
 
@@ -10,13 +11,14 @@ type Room = Tables<"rooms">;
 export function SeasonManager() {
   const { data: rooms } = useRooms();
   const [expiredRoom, setExpiredRoom] = useState<Room | null>(null);
+  const endPeriod = useEndPeriod();
 
   useEffect(() => {
     if (!rooms) return;
 
     for (const membership of rooms) {
       if (membership.role !== "admin") continue;
-      
+
       const room = membership.rooms as unknown as Room;
       if (!room || !room.current_period_start_date || !room.period_duration_days) continue;
 
@@ -34,9 +36,15 @@ export function SeasonManager() {
   if (!expiredRoom) return null;
 
   return (
-    <EndSeasonModal 
-      room={expiredRoom} 
-      onClose={() => setExpiredRoom(null)} 
+    <EndSeasonModal
+      isOpen={true}
+      onClose={() => setExpiredRoom(null)}
+      onConfirm={() => {
+        endPeriod.mutate({ roomId: expiredRoom.id });
+        setExpiredRoom(null);
+      }}
+      roomId={expiredRoom.id}
+      room={expiredRoom}
     />
   );
 }

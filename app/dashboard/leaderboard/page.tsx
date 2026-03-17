@@ -6,6 +6,7 @@ import { useRoom, useRoomMembers, useRoomTrophies } from "@/hooks/queries/useRoo
 import { useLeaderboard } from "@/hooks/queries/useTasks";
 import { useEndPeriod, useRemoveMember, useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useAuth } from "@/hooks/useAuth";
+import { EndSeasonModal } from "@/components/EndSeasonModal";
 import { useState } from "react";
 
 export default function LeaderboardPage() {
@@ -28,6 +29,7 @@ export default function LeaderboardPage() {
   const [isEditingPool, setIsEditingPool] = useState(false);
   const [editContribution, setEditContribution] = useState("");
   const [editDuration, setEditDuration] = useState("");
+  const [showEndModal, setShowEndModal] = useState(false);
 
   if (!roomId || roomLoading || membersLoading || trophiesLoading) {
     return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto"/></div>;
@@ -291,17 +293,25 @@ export default function LeaderboardPage() {
       </div>
 
       {isAdmin && (
-        <button
-          onClick={() => {
-            if (confirm("End the current period? This will lock in the points and award the trophy.")) {
+        <>
+          <button
+            onClick={() => setShowEndModal(true)}
+            disabled={endPeriod.isPending}
+            className="w-full py-4 bg-white/5 hover:bg-warning/20 active:bg-warning/30 text-warning border border-warning/20 rounded-2xl font-bold transition-all shadow-sm"
+          >
+            {endPeriod.isPending ? "Settling Period..." : "End Current Period"}
+          </button>
+          <EndSeasonModal
+            isOpen={showEndModal}
+            onClose={() => setShowEndModal(false)}
+            onConfirm={() => {
+              setShowEndModal(false);
               endPeriod.mutate({ roomId });
-            }
-          }}
-          disabled={endPeriod.isPending}
-          className="w-full py-4 bg-white/5 hover:bg-warning/20 active:bg-warning/30 text-warning border border-warning/20 rounded-2xl font-bold transition-all shadow-sm"
-        >
-          {endPeriod.isPending ? "Settling Period..." : "End Current Period"}
-        </button>
+            }}
+            roomId={roomId}
+            room={room}
+          />
+        </>
       )}
     </div>
   );
