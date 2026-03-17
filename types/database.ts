@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
@@ -142,6 +144,13 @@ export type Database = {
             referencedRelation: "rooms"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "room_members_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       rooms: {
@@ -154,6 +163,9 @@ export type Database = {
           invite_code: string
           name: string
           period_duration_days: number
+          point_limit: number | null
+          point_limit_period: string | null
+          recurrent_cooldown_days: number | null
         }
         Insert: {
           contribution_per_member?: number
@@ -164,6 +176,9 @@ export type Database = {
           invite_code?: string
           name: string
           period_duration_days?: number
+          point_limit?: number | null
+          point_limit_period?: string | null
+          recurrent_cooldown_days?: number | null
         }
         Update: {
           contribution_per_member?: number
@@ -174,6 +189,9 @@ export type Database = {
           invite_code?: string
           name?: string
           period_duration_days?: number
+          point_limit?: number | null
+          point_limit_period?: string | null
+          recurrent_cooldown_days?: number | null
         }
         Relationships: []
       }
@@ -222,6 +240,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "task_instances_assigned_user_id_profiles_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_instances_completed_by_user_id_profiles_fkey"
+            columns: ["completed_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "task_instances_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -244,8 +276,9 @@ export type Database = {
           description: string | null
           id: string
           points_reward: number
-          recurrence_pattern: string
+          recurrence_pattern: Json | null
           room_id: string
+          spawn_on_completion: boolean
           title: string
         }
         Insert: {
@@ -254,8 +287,9 @@ export type Database = {
           description?: string | null
           id?: string
           points_reward?: number
-          recurrence_pattern?: string
+          recurrence_pattern?: Json | null
           room_id: string
+          spawn_on_completion?: boolean
           title: string
         }
         Update: {
@@ -264,8 +298,9 @@ export type Database = {
           description?: string | null
           id?: string
           points_reward?: number
-          recurrence_pattern?: string
+          recurrence_pattern?: Json | null
           room_id?: string
+          spawn_on_completion?: boolean
           title?: string
         }
         Relationships: [
@@ -283,11 +318,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_task_instance: {
+        Args: { p_force?: boolean; p_task_id: string; p_user_id: string }
+        Returns: Json
+      }
+      complete_task_instance: {
+        Args: { p_task_id: string; p_user_id: string }
+        Returns: Json
+      }
       end_period: { Args: { p_room_id: string }; Returns: string }
       generate_task_instances: {
         Args: { p_count?: number; p_start_date?: string; p_template_id: string }
         Returns: undefined
       }
+      is_room_admin: { Args: { p_room_id: string }; Returns: boolean }
+      is_room_member: { Args: { p_room_id: string }; Returns: boolean }
     }
     Enums: {
       task_status: "pending" | "completed"
@@ -397,3 +442,28 @@ export type Enums<
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
     : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      task_status: ["pending", "completed"],
+    },
+  },
+} as const

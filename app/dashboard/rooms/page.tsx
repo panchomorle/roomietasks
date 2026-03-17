@@ -8,6 +8,7 @@ import { currentRoomIdAtom } from "@/store/atoms";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
+import { RoomSettingsDrawer } from "@/components/RoomSettingsDrawer";
 
 // ─── Create Room Drawer ──────────────────────────────────────
 function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
@@ -240,23 +241,19 @@ function RoomCard({
   isActive,
   onSelect,
   onLeave,
+  onOpenSettings,
   leavePending,
 }: {
   membership: any;
   isActive: boolean;
   onSelect: () => void;
   onLeave: () => void;
+  onOpenSettings: () => void;
   leavePending: boolean;
 }) {
   const room = membership.rooms;
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [isEditingLimits, setIsEditingLimits] = useState(false);
-  const [editName, setEditName] = useState(room?.name || "");
-  const [editLimit, setEditLimit] = useState(room?.point_limit || 0);
-  const [editPeriod, setEditPeriod] = useState((room?.point_limit_period as "day" | "week" | "month") || "week");
-  const updateRoom = useUpdateRoom();
 
   const inviteUrl = room?.invite_code
     ? `${typeof window !== "undefined" ? window.location.origin : ""}/invite/${room.invite_code}`
@@ -269,7 +266,6 @@ function RoomCard({
       url: inviteUrl,
     };
 
-    // Use Web Share API on mobile if available
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share(shareData);
@@ -277,7 +273,6 @@ function RoomCard({
         // User cancelled or share failed — ignore
       }
     } else {
-      // Fallback: copy link to clipboard
       await navigator.clipboard.writeText(inviteUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -290,29 +285,6 @@ function RoomCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSaveName = async () => {
-    if (!editName.trim() || editName === room?.name) {
-      setIsEditingName(false);
-      return;
-    }
-    await updateRoom.mutateAsync({
-      roomId: room.id,
-      updates: { name: editName },
-    });
-    setIsEditingName(false);
-  };
-
-  const handleSaveLimits = async () => {
-    await updateRoom.mutateAsync({
-      roomId: room.id,
-      updates: { 
-        point_limit: editLimit > 0 ? editLimit : null, 
-        point_limit_period: editLimit > 0 ? editPeriod : null 
-      },
-    });
-    setIsEditingLimits(false);
-  };
-
   return (
     <div className={`group bg-white/[0.03] border rounded-[24px] p-5 transition-all ${
       isActive ? "border-brand-500/40 shadow-[0_0_20px_rgba(99,102,241,0.08)]" : "border-white/[0.06]"
@@ -320,68 +292,13 @@ function RoomCard({
       <div className="flex items-start justify-between gap-3 mb-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            {isEditingName ? (
-              <div className="flex items-center gap-2 w-full">
-                <input
-                  type="text"
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-lg font-bold focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveName();
-                    if (e.key === "Escape") {
-                      setEditName(room?.name || "");
-                      setIsEditingName(false);
-                    }
-                  }}
-                />
-                <button
-                  onClick={handleSaveName}
-                  disabled={updateRoom.isPending}
-                  className="p-1.5 bg-brand-500/20 text-brand-400 hover:bg-brand-500/30 rounded-lg transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => {
-                    setEditName(room?.name || "");
-                    setIsEditingName(false);
-                  }}
-                  className="p-1.5 bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <>
-                <h3 className="text-lg font-bold text-white truncate flex items-center gap-2">
-                  {room?.name}
-                  {membership.role === "admin" && (
-                    <button
-                      onClick={() => {
-                        setEditName(room?.name || "");
-                        setIsEditingName(true);
-                      }}
-                      className="p-1 text-slate-400 hover:text-brand-400 transition-colors"
-                      title="Edit room name"
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                      </svg>
-                    </button>
-                  )}
-                </h3>
-                {isActive && (
-                  <span className="flex-shrink-0 px-2 py-0.5 bg-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded-md">
-                    Active
-                  </span>
-                )}
-              </>
+            <h3 className="text-lg font-bold text-white truncate flex items-center gap-2">
+              {room?.name}
+            </h3>
+            {isActive && (
+              <span className="flex-shrink-0 px-2 py-0.5 bg-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded-md">
+                Active
+              </span>
             )}
           </div>
           <p className="text-xs text-slate-500 font-medium">
@@ -389,7 +306,7 @@ function RoomCard({
           </p>
           {room?.point_limit ? (
             <p className="text-[10px] text-brand-400/80 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
               </svg>
               Limit: {room.point_limit} pts/{room.point_limit_period}
@@ -397,85 +314,42 @@ function RoomCard({
           ) : (
              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1.5">No point limit</p>
           )}
+          {room?.recurrent_cooldown_days > 0 && (
+            <p className="text-[10px] text-indigo-400/80 font-bold uppercase tracking-wider mt-1 flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Cooldown: {room.recurrent_cooldown_days} days
+            </p>
+          )}
         </div>
 
-        {/* Always-visible Share button */}
-        <button
-          onClick={handleShare}
-          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-brand-500/15 hover:bg-brand-500/25 active:bg-brand-500/35 text-brand-400 rounded-xl transition-colors text-xs font-semibold"
-          title="Share invite link"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
-          </svg>
-          {copied ? "Copied!" : "Share"}
-        </button>
-
-        {membership.role === "admin" && (
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <button
-            onClick={() => {
-              setEditLimit(room?.point_limit || 0);
-              setEditPeriod(room?.point_limit_period || "week");
-              setIsEditingLimits(true);
-            }}
-            className="flex-shrink-0 p-2 text-slate-500 hover:text-brand-400 transition-colors"
-            title="Edit limits"
+            onClick={handleShare}
+            className="flex items-center gap-1.5 px-3 py-2 bg-brand-500/15 hover:bg-brand-500/25 active:bg-brand-500/35 text-brand-400 rounded-xl transition-colors text-xs font-semibold"
+            title="Share invite link"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 18H7.5m9-6h2.25m-2.25 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 12h9.75" />
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
+            {copied ? "Copied!" : "Share"}
           </button>
-        )}
-      </div>
 
-      {isEditingLimits && (
-        <div className="mb-4 bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 animate-fade-in">
-          <div className="flex items-center justify-between mb-4">
-            <label className="text-xs font-bold text-brand-300 uppercase tracking-widest">Points Limit</label>
-            <div className="flex bg-white/5 rounded-lg p-0.5">
-              {(["day", "week", "month"] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setEditPeriod(p)}
-                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
-                    editPeriod === p
-                      ? "bg-brand-500 text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-300"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center gap-3 mb-4">
-            <input
-              type="number"
-              min={0}
-              value={editLimit}
-              onChange={(e) => setEditLimit(parseInt(e.target.value) || 0)}
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:ring-1 focus:ring-brand-500/50"
-            />
-            <span className="text-xs font-medium text-slate-500">pts/{editPeriod}</span>
-          </div>
-          <div className="flex gap-2">
+          {membership.role === "admin" && (
             <button
-              onClick={() => setIsEditingLimits(false)}
-              className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-colors"
+              onClick={onOpenSettings}
+              className="p-2 text-slate-500 hover:text-brand-400 transition-colors bg-white/5 rounded-xl border border-white/5"
+              title="Room Settings"
             >
-              Cancel
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.343 3.94c.09-.542.56-.94 1.11-.94h1.093c.55 0 1.02.398 1.11.94l.149.894c.07.424.384.764.78.93.398.164.855.142 1.205-.108l.737-.527a1.125 1.125 0 011.45.12l.773.774c.39.389.44 1.002.12 1.45l-.527.737c-.25.35-.272.806-.107 1.204.165.397.505.71.93.78l.893.15c.543.09.94.56.94 1.109v1.094c0 .55-.397 1.02-.94 1.11l-.893.149c-.425.07-.765.383-.93.78-.165.398-.143.854.107 1.204l.527.738c.32.447.269 1.06-.12 1.45l-.774.773a1.125 1.125 0 01-1.449.12l-.738-.527c-.35-.25-.806-.272-1.203-.107-.397.165-.71.505-.781.929l-.149.894c-.09.542-.56.94-1.11.94h-1.094c-.55 0-1.019-.398-1.11-.94l-.148-.894c-.071-.424-.384-.764-.781-.93-.398-.164-.854-.142-1.204.108l-.738.527c-.447.32-1.06.269-1.45-.12l-.773-.774a1.125 1.125 0 01-.12-1.45l.527-.737c.25-.35.273-.806.108-1.204-.165-.397-.505-.71-.93-.78l-.894-.15c-.542-.09-.94-.56-.94-1.109v-1.094c0-.55.398-1.02.94-1.11l.894-.149c.424-.07.765-.383.93-.78.165-.398.143-.854-.107-1.204l-.527-.738a1.125 1.125 0 01.12-1.45l.773-.773a1.125 1.125 0 011.45-.12l.737.527c.35.25.807.272 1.204.107.397-.165.71-.505.78-.929l.15-.894z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
             </button>
-            <button
-              onClick={handleSaveLimits}
-              disabled={updateRoom.isPending}
-              className="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-brand-500/20"
-            >
-              Save Limits
-            </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Invite Code Toggle + small copy icon */}
       <div className="mb-3">
@@ -492,7 +366,6 @@ function RoomCard({
             )}
           </button>
 
-          {/* Small icon-only copy link button */}
           {showInvite && room?.invite_code && (
             <button
               onClick={handleCopyLink}
@@ -548,6 +421,7 @@ export default function RoomsPage() {
 
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
   const [showJoinDrawer, setShowJoinDrawer] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<any>(null);
 
   const handleLeave = (roomId: string) => {
     leaveRoom.mutate(
@@ -647,6 +521,7 @@ export default function RoomsPage() {
               isActive={currentRoomId === membership.room_id}
               onSelect={() => setCurrentRoomId(membership.room_id)}
               onLeave={() => handleLeave(membership.room_id)}
+              onOpenSettings={() => setEditingRoom(membership.rooms)}
               leavePending={leaveRoom.isPending}
             />
           ))}
@@ -671,6 +546,12 @@ export default function RoomsPage() {
       )}
       {showJoinDrawer && user && (
         <JoinRoomDrawer userId={user.id} onClose={() => setShowJoinDrawer(false)} />
+      )}
+      {editingRoom && (
+        <RoomSettingsDrawer 
+          room={editingRoom} 
+          onClose={() => setEditingRoom(null)} 
+        />
       )}
     </div>
   );
