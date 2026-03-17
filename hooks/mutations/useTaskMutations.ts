@@ -8,14 +8,32 @@ export function useClaimTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, userId }: { taskId: string; userId: string }) => {
-      const { error } = await supabase
-        .from("task_instances")
-        .update({ assigned_user_id: userId })
-        .eq("id", taskId)
-        .is("assigned_user_id", null);
+    mutationFn: async ({ 
+      taskId, 
+      userId, 
+      force = false 
+    }: { 
+      taskId: string; 
+      userId: string; 
+      force?: boolean 
+    }) => {
+      const { data, error } = await (supabase.rpc as any)("claim_task_instance", {
+        p_task_id: taskId,
+        p_user_id: userId,
+        p_force: force,
+      });
 
       if (error) throw error;
+      
+      const result = data as any;
+      if (result && !result.success) {
+        const err = new Error(result.message || result.error);
+        (err as any).code = result.error;
+        (err as any).details = result;
+        throw err;
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task-instances"] });
@@ -48,16 +66,23 @@ export function useCompleteTask() {
 
   return useMutation({
     mutationFn: async ({ taskId, userId }: { taskId: string; userId: string }) => {
-      const { error } = await supabase
-        .from("task_instances")
-        .update({
-          status: "completed" as const,
-          completed_by_user_id: userId,
-          completed_at: new Date().toISOString(),
-        })
-        .eq("id", taskId);
+      const { data, error } = await (supabase.rpc as any)("complete_task_instance", {
+        p_task_id: taskId,
+        p_user_id: userId,
+      });
 
       if (error) throw error;
+      
+      const result = data as any;
+      if (result && !result.success) {
+        // Create an error object that includes the extra data from the RPC
+        const err = new Error(result.message || result.error);
+        (err as any).code = result.error;
+        (err as any).details = result;
+        throw err;
+      }
+      
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task-instances"] });
@@ -299,11 +324,15 @@ export function useCreateRoom() {
       contributionPerMember,
       periodDurationDays,
       userId,
+      pointLimit,
+      pointLimitPeriod,
     }: {
       name: string;
       contributionPerMember: number;
       periodDurationDays: number;
       userId: string;
+      pointLimit?: number;
+      pointLimitPeriod?: string;
     }) => {
       const { data: room, error: roomError } = await supabase
         .from("rooms")
@@ -312,6 +341,8 @@ export function useCreateRoom() {
           contribution_per_member: contributionPerMember,
           period_duration_days: periodDurationDays,
           created_by: userId,
+          point_limit: pointLimit,
+          point_limit_period: pointLimitPeriod,
         })
         .select()
         .single();
@@ -449,6 +480,8 @@ export function useUpdateRoom() {
         name?: string;
         contribution_per_member?: number;
         period_duration_days?: number;
+        point_limit?: number | null;
+        point_limit_period?: string | null;
       };
     }) => {
       const { data, error } = await supabase

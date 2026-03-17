@@ -8,6 +8,7 @@ import { useRoom, useRoomMembers } from "@/hooks/queries/useRooms";
 import { useClaimTask, useUnclaimTask, useCompleteTask, useCreateTaskTemplate, useDeleteTask, useEditTaskTemplate } from "@/hooks/mutations/useTaskMutations";
 import { useState } from "react";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
+import { PointLimitModal } from "@/components/PointLimitModal";
 
 // ─── Task Card ───────────────────────────────────────────────
 function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmin: boolean }) {
@@ -17,6 +18,39 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
   const deleteTask = useDeleteTask();
   const [showOptions, setShowOptions] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; type: "point_limit_exceeded" | "too_early" | "claim_limit_warning"; details?: any } | null>(null);
+
+  const handleClaim = async () => {
+    try {
+      await claimTask.mutateAsync({ taskId: task.id, userId });
+    } catch (err: any) {
+      if (err.code === "claim_limit_warning") {
+        setErrorModal({
+          isOpen: true,
+          type: "claim_limit_warning",
+          details: err.details
+        });
+      } else {
+        alert(err.message || "Failed to claim task");
+      }
+    }
+  };
+
+  const handleComplete = async () => {
+    try {
+      await completeTask.mutateAsync({ taskId: task.id, userId });
+    } catch (err: any) {
+      if (err.code === "point_limit_exceeded" || err.code === "too_early") {
+        setErrorModal({
+          isOpen: true,
+          type: err.code as any,
+          details: err.details
+        });
+      } else {
+        alert(err.message || "Failed to complete task");
+      }
+    }
+  };
 
   const isAssigned = !!task.assigned_user_id;
   const isAssignedToMe = task.assigned_user_id === userId;
@@ -65,7 +99,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
               </div>
             ) : (
               <button
-                onClick={() => claimTask.mutate({ taskId: task.id, userId })}
+                onClick={handleClaim}
                 disabled={claimTask.isPending}
                 className="px-4 py-2 bg-brand-600/20 hover:bg-brand-600/30 active:bg-brand-600/40 text-brand-400 text-sm font-semibold rounded-xl transition-all"
               >
@@ -125,7 +159,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
         {/* Complete Button (Full width on mobile if assigned to me) */}
         {isAssignedToMe && (
           <button
-            onClick={() => completeTask.mutate({ taskId: task.id, userId })}
+            onClick={handleComplete}
             disabled={completeTask.isPending}
             className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-success/15 hover:bg-success/25 active:bg-success/30 text-success rounded-xl font-bold transition-all"
           >
@@ -141,6 +175,17 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
         <EditTaskDrawer 
           task={task} 
           onClose={() => setShowEdit(false)} 
+        />
+      )}
+
+      {errorModal && (
+        <PointLimitModal
+          isOpen={errorModal.isOpen}
+          onClose={() => setErrorModal(null)}
+          errorType={errorModal.type}
+          details={errorModal.details}
+          taskId={task.id}
+          userId={userId}
         />
       )}
     </>

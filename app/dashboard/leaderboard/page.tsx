@@ -20,7 +20,7 @@ export default function LeaderboardPage() {
     roomId,
     room?.current_period_start_date
   );
-  
+
   const endPeriod = useEndPeriod();
   const removeMember = useRemoveMember();
   const updateRoom = useUpdateRoom();
@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
   const [showEndModal, setShowEndModal] = useState(false);
 
   if (!roomId || roomLoading || membersLoading || trophiesLoading) {
-    return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto"/></div>;
+    return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto" /></div>;
   }
 
   const memberCount = members?.length ?? 0;
@@ -72,14 +72,14 @@ export default function LeaderboardPage() {
     const endDate = new Date(startDate.getTime() + room.period_duration_days * 24 * 60 * 60 * 1000);
     const now = new Date();
     const diffTime = endDate.getTime() - now.getTime();
-    
+
     if (diffTime > 0) {
       const daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       const hoursLeft = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      
-      timeLeftStr = daysLeft > 0 
+
+      timeLeftStr = daysLeft > 0
         ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left for the GRAND DROP`
-        : hoursLeft > 0 
+        : hoursLeft > 0
           ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left for the GRAND DROP`
           : "Ends today!";
     } else {
@@ -190,17 +190,15 @@ export default function LeaderboardPage() {
         <div className="flex items-center bg-white/5 rounded-lg p-1">
           <button
             onClick={() => setSortBy("points")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-              sortBy === "points" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${sortBy === "points" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
+              }`}
           >
             By Points
           </button>
           <button
             onClick={() => setSortBy("alpha")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
-              sortBy === "alpha" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${sortBy === "alpha" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
+              }`}
           >
             A-Z
           </button>
@@ -211,7 +209,7 @@ export default function LeaderboardPage() {
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-[28px] p-2 sm:p-4 mb-8">
         {leaderboardLoading ? (
           <div className="space-y-2 p-2">
-            {[1,2,3].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse"/>)}
+            {[1, 2, 3].map(i => <div key={i} className="h-16 bg-white/5 rounded-2xl animate-pulse" />)}
           </div>
         ) : mergedMembers.length > 0 ? (
           <div className="space-y-1">
@@ -224,20 +222,18 @@ export default function LeaderboardPage() {
               return (
                 <div
                   key={entry.userId}
-                  className={`relative flex items-center justify-between gap-3 sm:gap-4 px-4 py-3 sm:py-4 rounded-2xl transition-all ${
-                    isFirst ? "bg-white/[0.06] shadow-sm" : "hover:bg-white/[0.02]"
-                  }`}
+                  className={`relative flex items-center justify-between gap-3 sm:gap-4 px-4 py-3 sm:py-4 rounded-2xl transition-all ${isFirst ? "bg-white/[0.06] shadow-sm" : "hover:bg-white/[0.02]"
+                    }`}
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
-                      isFirst ? "bg-yellow-500 text-slate-900 shadow-md shadow-yellow-500/20 text-sm" :
-                      sortBy === "points" && i === 1 && entry.points > 0 ? "bg-slate-300 text-slate-900 text-sm" :
-                      sortBy === "points" && i === 2 && entry.points > 0 ? "bg-amber-700 text-white text-sm" :
-                      "bg-white/5 text-slate-400 text-xs"
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 ${isFirst ? "bg-yellow-500 text-slate-900 shadow-md shadow-yellow-500/20 text-sm" :
+                        sortBy === "points" && i === 1 && entry.points > 0 ? "bg-slate-300 text-slate-900 text-sm" :
+                          sortBy === "points" && i === 2 && entry.points > 0 ? "bg-amber-700 text-white text-sm" :
+                            "bg-white/5 text-slate-400 text-xs"
+                      }`}>
                       {sortBy === "points" ? i + 1 : "-"}
                     </div>
-                    
+
                     {entry.avatarUrl ? (
                       <img src={entry.avatarUrl} alt="" className="w-10 h-10 rounded-full object-cover ring-2 ring-white/10 flex-shrink-0" />
                     ) : (
@@ -245,11 +241,11 @@ export default function LeaderboardPage() {
                         {entry.fullName.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-[15px] font-semibold text-white truncate break-words">
-                          {entry.fullName} {entry.trophies > 0 && <span className="ml-1 text-sm bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded-md font-bold">🏆 ({entry.trophies})</span>}
+                          {entry.fullName} {entry.trophies > 0 && <span className="ml-1 text-sm bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded-md font-bold">🏆 {entry.trophies}</span>}
                           {isMe && <span className="ml-2 text-[10px] text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider">You</span>}
                           {entry.role === "admin" && <span className="ml-2 text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">Admin</span>}
                         </p>
@@ -257,7 +253,7 @@ export default function LeaderboardPage() {
                       <p className="text-xs text-slate-400 font-medium">{entry.points} points</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
                     <div className="text-right">
                       <p className={`text-base font-bold ${isFirst ? "text-success" : "text-slate-300"}`}>
@@ -288,7 +284,7 @@ export default function LeaderboardPage() {
             })}
           </div>
         ) : (
-           null
+          null
         )}
       </div>
 

@@ -17,6 +17,8 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
     name: "",
     contribution: 50,
     periodDays: 30,
+    pointLimit: 0,
+    pointLimitPeriod: "week" as "day" | "week" | "month",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -26,6 +28,8 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
       contributionPerMember: form.contribution,
       periodDurationDays: form.periodDays,
       userId,
+      pointLimit: form.pointLimit > 0 ? form.pointLimit : undefined,
+      pointLimitPeriod: form.pointLimit > 0 ? form.pointLimitPeriod : undefined,
     });
     setCurrentRoomId(room.id);
     onClose();
@@ -71,6 +75,42 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
               className="w-full bg-transparent text-xl font-bold text-white focus:outline-none"
             />
           </div>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-4">
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Point Limit</label>
+            <div className="flex bg-white/5 rounded-lg p-0.5">
+              {(["day", "week", "month"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setForm({ ...form, pointLimitPeriod: p })}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
+                    form.pointLimitPeriod === p
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={0}
+              value={form.pointLimit}
+              onChange={(e) => setForm({ ...form, pointLimit: parseInt(e.target.value) || 0 })}
+              className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
+              placeholder="No limit"
+            />
+            <span className="text-sm font-medium text-slate-500">points/{form.pointLimitPeriod}</span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2 font-medium">
+            Limits how many points a member can earn per {form.pointLimitPeriod}. Set to 0 for no limit.
+          </p>
         </div>
         <div className="pt-2">
           <button
@@ -212,7 +252,10 @@ function RoomCard({
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
+  const [isEditingLimits, setIsEditingLimits] = useState(false);
   const [editName, setEditName] = useState(room?.name || "");
+  const [editLimit, setEditLimit] = useState(room?.point_limit || 0);
+  const [editPeriod, setEditPeriod] = useState((room?.point_limit_period as "day" | "week" | "month") || "week");
   const updateRoom = useUpdateRoom();
 
   const inviteUrl = room?.invite_code
@@ -257,6 +300,17 @@ function RoomCard({
       updates: { name: editName },
     });
     setIsEditingName(false);
+  };
+
+  const handleSaveLimits = async () => {
+    await updateRoom.mutateAsync({
+      roomId: room.id,
+      updates: { 
+        point_limit: editLimit > 0 ? editLimit : null, 
+        point_limit_period: editLimit > 0 ? editPeriod : null 
+      },
+    });
+    setIsEditingLimits(false);
   };
 
   return (
@@ -333,6 +387,16 @@ function RoomCard({
           <p className="text-xs text-slate-500 font-medium">
             {membership.role === "admin" ? "Admin" : "Member"} · ${room?.contribution_per_member}/period · {room?.period_duration_days} days
           </p>
+          {room?.point_limit ? (
+            <p className="text-[10px] text-brand-400/80 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
+              </svg>
+              Limit: {room.point_limit} pts/{room.point_limit_period}
+            </p>
+          ) : (
+             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1.5">No point limit</p>
+          )}
         </div>
 
         {/* Always-visible Share button */}
@@ -346,7 +410,72 @@ function RoomCard({
           </svg>
           {copied ? "Copied!" : "Share"}
         </button>
+
+        {membership.role === "admin" && (
+          <button
+            onClick={() => {
+              setEditLimit(room?.point_limit || 0);
+              setEditPeriod(room?.point_limit_period || "week");
+              setIsEditingLimits(true);
+            }}
+            className="flex-shrink-0 p-2 text-slate-500 hover:text-brand-400 transition-colors"
+            title="Edit limits"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 18H7.5m9-6h2.25m-2.25 0a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 12h9.75" />
+            </svg>
+          </button>
+        )}
       </div>
+
+      {isEditingLimits && (
+        <div className="mb-4 bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4 animate-fade-in">
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-xs font-bold text-brand-300 uppercase tracking-widest">Points Limit</label>
+            <div className="flex bg-white/5 rounded-lg p-0.5">
+              {(["day", "week", "month"] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setEditPeriod(p)}
+                  className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
+                    editPeriod === p
+                      ? "bg-brand-500 text-white shadow-sm"
+                      : "text-slate-500 hover:text-slate-300"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3 mb-4">
+            <input
+              type="number"
+              min={0}
+              value={editLimit}
+              onChange={(e) => setEditLimit(parseInt(e.target.value) || 0)}
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white font-bold focus:outline-none focus:ring-1 focus:ring-brand-500/50"
+            />
+            <span className="text-xs font-medium text-slate-500">pts/{editPeriod}</span>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsEditingLimits(false)}
+              className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveLimits}
+              disabled={updateRoom.isPending}
+              className="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition-colors shadow-lg shadow-brand-500/20"
+            >
+              Save Limits
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Invite Code Toggle + small copy icon */}
       <div className="mb-3">
