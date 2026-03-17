@@ -206,7 +206,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     recurrenceType: (initialRecurrence.type === "none" ? "weekly" : initialRecurrence.type) as "daily" | "weekly" | "biweekly" | "monthly",
     weeklyDays: (initialRecurrence.days as number[]) || [], // 0=Sun, 1=Mon, ..., 6=Sat
     spawnOnCompletion: template?.spawn_on_completion || false,
-    startsToday: true,
+    startsToday: false,
   });
 
   const toggleDay = (day: number) => {
