@@ -3,6 +3,7 @@
 import { DraggableDrawer } from "./DraggableDrawer";
 import { useUnclaimTask, useClaimTask } from "@/hooks/mutations/useTaskMutations";
 import { useTranslation } from "@/hooks/useTranslation";
+import { translations } from "@/lib/translations";
 
 interface PointLimitModalProps {
   isOpen: boolean;
@@ -21,7 +22,7 @@ export function PointLimitModal({
   taskId,
   userId,
 }: PointLimitModalProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const unclaimTask = useUnclaimTask();
   const claimTask = useClaimTask();
 
@@ -92,6 +93,19 @@ export function PointLimitModal({
               {t("cooldown_desc")
                 .replace("{days}", details?.remaining_days || "0")
                 .replace("{hours}", details?.remaining_hours || "0")}
+            </>
+          ) : errorType === "too_early" ? (
+            <>
+              {t("too_early_desc").replace(
+                "{date}",
+                details?.due_date
+                  ? new Intl.DateTimeFormat(translations[language].language_code, {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "short",
+                    }).format(new Date(details.due_date))
+                  : ""
+              )}
             </>
           ) : (
             details?.message || t("too_early_desc")
