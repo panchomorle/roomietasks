@@ -1,7 +1,8 @@
 import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
 
 // Current active room ID
-export const currentRoomIdAtom = atom<string | null>(null);
+export const currentRoomIdAtom = atomWithStorage<string | null>("roomietasks_current_room_id", null);
 
 // Task filter and sort for the dashboard
 export type TaskFilter = "all" | "unassigned" | "mine";

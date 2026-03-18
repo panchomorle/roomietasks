@@ -6,7 +6,7 @@ import { currentRoomIdAtom } from "@/store/atoms";
 import { useRooms } from "@/hooks/queries/useRooms";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { SeasonManager } from "@/components/SeasonManager";
 import { useTranslation } from "@/hooks/useTranslation";
 
@@ -17,15 +17,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { data: rooms, isLoading: roomsLoading } = useRooms();
   const pathname = usePathname();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const hasRooms = rooms && rooms.length > 0;
 
-  // Auto-select first room if none selected
+  // Auto-select first room if none selected, or if the persisted room is no longer valid
+  // We wait for `mounted` so we don't accidentally overwrite Jotai atomWithStorage before hydration completes.
   useEffect(() => {
-    if (!currentRoomId && hasRooms) {
-      setCurrentRoomId(rooms[0].room_id);
+    if (mounted && !roomsLoading && hasRooms) {
+      const isValidRoom = rooms.some((r: any) => r.room_id === currentRoomId);
+      if (!currentRoomId || !isValidRoom) {
+        setCurrentRoomId(rooms[0].room_id);
+      }
     }
-  }, [currentRoomId, hasRooms, rooms, setCurrentRoomId]);
+  }, [mounted, currentRoomId, hasRooms, rooms, roomsLoading, setCurrentRoomId]);
 
   // If no room is active and user is not on /dashboard/rooms, redirect there
   useEffect(() => {
