@@ -8,8 +8,11 @@ import { useEndPeriod, useRemoveMember, useUpdateRoom } from "@/hooks/mutations/
 import { useAuth } from "@/hooks/useAuth";
 import { EndSeasonModal } from "@/components/EndSeasonModal";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LeaderboardPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
 
@@ -77,11 +80,15 @@ export default function LeaderboardPage() {
       const daysLeft = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       const hoursLeft = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-      timeLeftStr = daysLeft > 0
-        ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left for the GRAND DROP`
-        : hoursLeft > 0
-          ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left for the GRAND DROP`
-          : "Ends today!";
+      timeLeftStr = daysLeft > 1
+        ? t("days_left_grand_drop").replace("{count}", daysLeft.toString())
+        : daysLeft === 1
+          ? t("day_left_grand_drop").replace("{count}", "1")
+          : hoursLeft > 1
+            ? t("hours_left_grand_drop").replace("{count}", hoursLeft.toString())
+            : hoursLeft === 1
+              ? t("hour_left_grand_drop").replace("{count}", "1")
+              : t("ends_today");
     } else {
       timeLeftStr = "Season Expired!";
     }
@@ -89,9 +96,12 @@ export default function LeaderboardPage() {
 
   return (
     <div className="pb-10">
-      <div className="mb-6 pt-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Leaderboard</h1>
-        <p className="text-sm font-medium text-brand-400 mt-1">{room?.name}</p>
+      <div className="mb-6 pt-2 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("leaderboard")}</h1>
+          <p className="text-sm font-medium text-brand-400 mt-1">{room?.name}</p>
+        </div>
+        <LanguageSwitcher />
       </div>
 
       {/* Monetary Pot Highlight */}
@@ -99,10 +109,10 @@ export default function LeaderboardPage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/20 rounded-full blur-3xl" />
         {isEditingPool ? (
           <div className="relative z-10 w-full max-w-sm mx-auto flex flex-col items-center">
-            <h3 className="text-white font-bold mb-4">Edit Pool Settings</h3>
+            <h3 className="text-white font-bold mb-4">{t("edit_pool_settings")}</h3>
             <div className="w-full space-y-4">
               <div>
-                <label className="text-xs text-brand-300 font-semibold mb-1 block">Contribution per member ($)</label>
+                <label className="text-xs text-brand-300 font-semibold mb-1 block">{t("contribution_per_member")}</label>
                 <input
                   type="number"
                   value={editContribution}
@@ -112,7 +122,7 @@ export default function LeaderboardPage() {
                 />
               </div>
               <div>
-                <label className="text-xs text-brand-300 font-semibold mb-1 block">Period duration (days)</label>
+                <label className="text-xs text-brand-300 font-semibold mb-1 block">{t("period_duration")}</label>
                 <input
                   type="number"
                   value={editDuration}
@@ -127,7 +137,7 @@ export default function LeaderboardPage() {
                 onClick={() => setIsEditingPool(false)}
                 className="flex-1 py-2 rounded-xl text-slate-300 font-semibold hover:bg-white/5 transition-colors"
               >
-                Cancel
+                {t("cancel")}
               </button>
               <button
                 onClick={async () => {
@@ -149,13 +159,15 @@ export default function LeaderboardPage() {
           </div>
         ) : (
           <div className="text-center relative z-10">
-            <p className="text-sm font-semibold text-brand-300 uppercase tracking-widest mb-1">Current Pool</p>
+            <p className="text-sm font-semibold text-brand-300 uppercase tracking-widest mb-1">{t("current_pool")}</p>
             <p className="text-5xl font-black text-white tracking-tight mb-2">${totalPool.toFixed(2)}</p>
             <p className="text-xs text-brand-300/70 mb-1">
-              Based on {memberCount} members @ ${contribution.toFixed(2)}
+              {t("based_on_members")
+                .replace("{count}", memberCount.toString())
+                .replace("${amount}", `$${contribution.toFixed(2)}`)}
             </p>
             <p className="text-[10px] text-brand-300/50 uppercase tracking-widest font-semibold">
-              {room?.period_duration_days} Day Period
+              {room?.period_duration_days} {t("period_days")}
             </p>
             {timeLeftStr && (
               <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-brand-500/30">
@@ -186,21 +198,21 @@ export default function LeaderboardPage() {
 
       {/* Sort Options & Header */}
       <div className="flex items-center justify-between mb-4 px-2">
-        <h2 className="text-sm font-bold text-slate-300">Room Members</h2>
+        <h2 className="text-sm font-bold text-slate-300">{t("room_members")}</h2>
         <div className="flex items-center bg-white/5 rounded-lg p-1">
           <button
             onClick={() => setSortBy("points")}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${sortBy === "points" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
               }`}
           >
-            By Points
+            {t("by_points")}
           </button>
           <button
             onClick={() => setSortBy("alpha")}
             className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${sortBy === "alpha" ? "bg-white/10 text-white shadow" : "text-slate-500 hover:text-slate-300"
               }`}
           >
-            A-Z
+            {t("alpha")}
           </button>
         </div>
       </div>
@@ -246,11 +258,11 @@ export default function LeaderboardPage() {
                       <div className="flex items-center gap-2">
                         <p className="text-[15px] font-semibold text-white truncate break-words">
                           {entry.fullName} {entry.trophies > 0 && <span className="ml-1 text-sm bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded-md font-bold">🏆 {entry.trophies}</span>}
-                          {isMe && <span className="ml-2 text-[10px] text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider">You</span>}
-                          {entry.role === "admin" && <span className="ml-2 text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">Admin</span>}
+                          {isMe && <span className="ml-2 text-[10px] text-brand-400 bg-brand-500/10 px-1.5 py-0.5 rounded uppercase tracking-wider">{t("you")}</span>}
+                          {entry.role === "admin" && <span className="ml-2 text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">{t("admin")}</span>}
                         </p>
                       </div>
-                      <p className="text-xs text-slate-400 font-medium">{entry.points} points</p>
+                      <p className="text-xs text-slate-400 font-medium">{entry.points} {t("points")}</p>
                     </div>
                   </div>
 
@@ -295,7 +307,7 @@ export default function LeaderboardPage() {
             disabled={endPeriod.isPending}
             className="w-full py-4 bg-white/5 hover:bg-warning/20 active:bg-warning/30 text-warning border border-warning/20 rounded-2xl font-bold transition-all shadow-sm"
           >
-            {endPeriod.isPending ? "Settling Period..." : "End Current Period"}
+            {endPeriod.isPending ? t("settling_period") : t("end_period")}
           </button>
           <EndSeasonModal
             isOpen={showEndModal}

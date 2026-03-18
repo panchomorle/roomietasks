@@ -3,9 +3,12 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 function LoginForm() {
   const { signInWithGoogle, loading } = useAuth();
+  const { t } = useTranslation();
   const searchParams = useSearchParams();
   const nextParam = searchParams.get("next");
 
@@ -34,20 +37,26 @@ function LoginForm() {
             fill="#EA4335"
           />
         </svg>
-        {loading ? "Loading..." : "Continue with Google"}
+        {loading ? t("loading") : t("continue_with_google")}
       </button>
 
       <p className="text-center text-slate-500 text-sm mt-6">
-        Sign in to manage your household chores and compete with your
-        roommates.
+        {t("login_description")}
       </p>
     </div>
   );
 }
 
 export default function LoginPage() {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-950 relative overflow-hidden">
+      {/* Language Switcher in top right */}
+      <div className="absolute top-6 right-6 z-20">
+        <LanguageSwitcher />
+      </div>
+
       {/* Ambient glow effects */}
       <div className="absolute top-1/4 -left-32 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
       <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-violet-500/20 rounded-full blur-3xl" />
@@ -55,7 +64,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo & Branding */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-2xl shadow-indigo-500/30 mb-6">
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-2xl shadow-indigo-500/30 mb-6 font-primary">
             <svg
               className="w-10 h-10 text-white"
               fill="none"
@@ -71,20 +80,20 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-4xl font-bold text-white tracking-tight">
-            RoomieTasks
+            {t("login_title")}
           </h1>
-          <p className="text-slate-400 mt-3 text-lg">
-            Split chores. Earn points. Win the pot.
+          <p className="text-slate-400 mt-3 text-lg font-medium">
+            {t("login_subtitle")}
           </p>
         </div>
 
         {/* Login Card */}
-        <Suspense fallback={<div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl flex items-center justify-center text-slate-400 h-48">Loading login...</div>}>
+        <Suspense fallback={<div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl flex items-center justify-center text-slate-400 h-48">{t("loading_login")}</div>}>
           <LoginForm />
         </Suspense>
 
-        <p className="text-center text-slate-600 text-xs mt-8">
-          By signing in, you agree to our Terms of Service
+        <p className="text-center text-slate-600 text-xs mt-8 font-medium">
+          {t("terms_of_service")}
         </p>
       </div>
     </div>

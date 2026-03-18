@@ -9,9 +9,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
 import { RoomSettingsDrawer } from "@/components/RoomSettingsDrawer";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 // ─── Create Room Drawer ──────────────────────────────────────
 function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { t } = useTranslation();
   const createRoom = useCreateRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
   const [form, setForm] = useState({
@@ -38,23 +41,23 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
 
   return (
     <DraggableDrawer onClose={onClose}>
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Create a Room</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("create_a_room")}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Household name</label>
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t("household_name")}</label>
           <input
             type="text"
             required
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 font-medium"
-            placeholder="e.g. Apartment 3B"
+            placeholder={t("room_name_placeholder")}
           />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Contribution ($)</label>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("contribution_label")}</label>
             <input
               type="number"
               min={0}
@@ -66,7 +69,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
             />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Period (days)</label>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("period_days_label")}</label>
             <input
               type="number"
               min={1}
@@ -80,7 +83,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Point Limit</label>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("point_limit")}</label>
             <div className="flex bg-white/5 rounded-lg p-0.5">
               {(["day", "week", "month"] as const).map((p) => (
                 <button
@@ -93,7 +96,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
                       : "text-slate-500 hover:text-slate-300"
                   }`}
                 >
-                  {p}
+                  {t(p)}
                 </button>
               ))}
             </div>
@@ -105,12 +108,12 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
               value={form.pointLimit}
               onChange={(e) => setForm({ ...form, pointLimit: parseInt(e.target.value) || 0 })}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
-              placeholder="No limit"
+              placeholder={t("no_limit")}
             />
-            <span className="text-sm font-medium text-slate-500">points/{form.pointLimitPeriod}</span>
+            <span className="text-sm font-medium text-slate-500">{t("pts")}/{t(form.pointLimitPeriod)}</span>
           </div>
           <p className="text-[10px] text-slate-500 mt-2 font-medium">
-            Limits how many points a member can earn per {form.pointLimitPeriod}. Set to 0 for no limit.
+            {t("limit_description").replace("{period}", t(form.pointLimitPeriod))}
           </p>
         </div>
         <div className="pt-2">
@@ -119,7 +122,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
             disabled={createRoom.isPending}
             className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
           >
-            {createRoom.isPending ? "Creating..." : "Create Room"}
+            {createRoom.isPending ? t("creating") : t("create")}
           </button>
         </div>
         {createRoom.isError && (
@@ -132,6 +135,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
 
 // ─── Join Room Drawer ────────────────────────────────────────
 function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
+  const { t } = useTranslation();
   const previewRoom = usePreviewRoom();
   const joinRoom = useJoinRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
@@ -160,11 +164,11 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
 
   return (
     <DraggableDrawer onClose={onClose}>
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">Join a Room</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-2">{t("join_room")}</h2>
       
       {!roomInfo ? (
         <>
-          <p className="text-slate-400 text-sm mb-6">Ask a roommate for the 8-character invite code.</p>
+          <p className="text-slate-400 text-sm mb-6">{t("invite_code_prompt")}</p>
           <form onSubmit={handlePreview} className="space-y-4">
             <input
               type="text"
@@ -173,14 +177,14 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-5 text-white text-2xl text-center tracking-[0.4em] font-mono font-bold placeholder:text-slate-600 placeholder:tracking-[0.2em] placeholder:text-lg focus:outline-none focus:ring-2 focus:ring-brand-500/50"
-              placeholder="INVITE CODE"
+              placeholder={t("invite_code_placeholder")}
             />
             <button
               type="submit"
               disabled={previewRoom.isPending || code.length < 4}
               className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
             >
-              {previewRoom.isPending ? "Searching..." : "Preview Room"}
+              {previewRoom.isPending ? t("searching") : t("preview_room")}
             </button>
             {previewRoom.isError && (
               <p className="text-red-400 text-sm text-center">{(previewRoom.error as Error).message}</p>
@@ -192,9 +196,9 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
           <div className="bg-gradient-to-br from-brand-500/10 to-indigo-500/10 border border-brand-500/20 rounded-2xl p-6 text-center">
             <h3 className="text-2xl font-black text-white mb-2">{roomInfo.name}</h3>
             <div className="flex flex-col items-center justify-center gap-1 mt-4">
-              <span className="text-xs uppercase tracking-widest text-brand-300 font-semibold">Pool Contribution</span>
+              <span className="text-xs uppercase tracking-widest text-brand-300 font-semibold">{t("pool_contribution")}</span>
               <span className="text-3xl font-bold text-white">${roomInfo.contribution_per_member}</span>
-              <span className="text-xs text-slate-400">every {roomInfo.period_duration_days} days</span>
+              <span className="text-xs text-slate-400">{t("every_x_days").replace("{days}", roomInfo.period_duration_days)}</span>
             </div>
           </div>
           
@@ -203,7 +207,7 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p className="text-sm text-slate-300">
-              By joining this room, you agree to the contribution amount set by the admin.
+              {t("agree_contribution")}
             </p>
           </div>
 
@@ -215,14 +219,14 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
               }}
               className="flex-1 py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-bold transition-colors"
             >
-              Cancel
+              {t("cancel")}
             </button>
             <button
               onClick={handleConfirmJoin}
               disabled={joinRoom.isPending}
               className="flex-[2] py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
             >
-              {joinRoom.isPending ? "Joining..." : "Join & Accept"}
+              {joinRoom.isPending ? t("searching") : t("join_accept")}
             </button>
           </div>
           {joinRoom.isError && (
@@ -251,6 +255,7 @@ function RoomCard({
   onOpenSettings: () => void;
   leavePending: boolean;
 }) {
+  const { t } = useTranslation();
   const room = membership.rooms;
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -261,8 +266,8 @@ function RoomCard({
 
   const handleShare = async () => {
     const shareData = {
-      title: `Join "${room?.name}" on RoomieTasks`,
-      text: `Your roommate invited you to join "${room?.name}". Tap the link to join!`,
+      title: t("share_title").replace("{room}", room?.name || ""), 
+      text: t("share_text").replace("{room}", room?.name || ""), 
       url: inviteUrl,
     };
 
@@ -297,29 +302,29 @@ function RoomCard({
             </h3>
             {isActive && (
               <span className="flex-shrink-0 px-2 py-0.5 bg-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-wider rounded-md">
-                Active
+                {t("active")}
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 font-medium">
-            {membership.role === "admin" ? "Admin" : "Member"} · ${room?.contribution_per_member}/period · {room?.period_duration_days} days
+            {membership.role === "admin" ? t("admin") : t("member")} · ${room?.contribution_per_member}/period · {room?.period_duration_days} {t("day")}
           </p>
           {room?.point_limit ? (
             <p className="text-[10px] text-brand-400/80 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
               </svg>
-              Limit: {room.point_limit} pts/{room.point_limit_period}
+              {t("point_limit")}: {room.point_limit} {t("pts")}/{t(room.point_limit_period)}
             </p>
           ) : (
-             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1.5">No point limit</p>
+             <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1.5">{t("no_limit")}</p>
           )}
           {room?.recurrent_cooldown_days > 0 && (
             <p className="text-[10px] text-indigo-400/80 font-bold uppercase tracking-wider mt-1 flex items-center gap-1.5">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Cooldown: {room.recurrent_cooldown_days} days
+              {t("cooldown")}: {room.recurrent_cooldown_days} {t("day")}
             </p>
           )}
         </div>
@@ -333,7 +338,7 @@ function RoomCard({
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
             </svg>
-            {copied ? "Copied!" : "Share"}
+            {copied ? t("copied") : t("share")}
           </button>
 
           {membership.role === "admin" && (
@@ -358,11 +363,11 @@ function RoomCard({
             onClick={() => setShowInvite(!showInvite)}
             className="flex-1 flex items-center justify-between bg-white/5 hover:bg-white/[0.07] active:bg-white/10 rounded-xl px-4 py-3 transition-colors"
           >
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Invite Code</span>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("invite_code")}</span>
             {showInvite ? (
               <span className="text-white font-mono font-bold tracking-[0.3em] text-sm">{room?.invite_code}</span>
             ) : (
-              <span className="text-slate-500 text-xs font-medium">Tap to reveal</span>
+              <span className="text-slate-500 text-xs font-medium">{t("tap_to_reveal")}</span>
             )}
           </button>
 
@@ -388,23 +393,23 @@ function RoomCard({
             onClick={onSelect}
             className="flex-1 py-3 bg-brand-600/20 hover:bg-brand-600/30 active:bg-brand-600/40 text-brand-400 rounded-xl font-semibold text-sm transition-colors"
           >
-            Switch to this Room
+            {t("switch_to_room")}
           </button>
         ) : (
           <div className="flex-1 py-3 bg-brand-500/10 text-brand-400/60 rounded-xl font-semibold text-sm text-center cursor-default">
-            Currently Active
+            {t("currently_active")}
           </div>
         )}
         <button
           onClick={() => {
-            if (confirm(`Leave "${room?.name}"? You will lose access to tasks and history.`)) {
+            if (confirm(t("leave_room_confirm").replace("{room}", room?.name || ""))) {
               onLeave();
             }
           }}
           disabled={leavePending}
           className="px-4 py-3 bg-danger/10 hover:bg-danger/20 active:bg-danger/30 text-danger rounded-xl font-semibold text-sm transition-colors flex-shrink-0"
         >
-          Leave
+          {leavePending ? t("leaving") : t("leave")}
         </button>
       </div>
     </div>
@@ -413,6 +418,7 @@ function RoomCard({
 
 // ─── Main Rooms Page ─────────────────────────────────────────
 export default function RoomsPage() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { data: rooms, isLoading } = useRooms();
   const [currentRoomId, setCurrentRoomId] = useAtom(currentRoomIdAtom);
@@ -446,30 +452,33 @@ export default function RoomsPage() {
       {/* Header with Sign-Out */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Your Rooms</h1>
-          <p className="text-sm text-slate-500 mt-1">Manage your households</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("your_rooms")}</h1>
+          <p className="text-sm text-slate-500 mt-1">{t("manage_households")}</p>
         </div>
-        <div className="flex items-center gap-3">
-          {user?.user_metadata?.avatar_url ? (
-            <img
-              src={user.user_metadata.avatar_url}
-              alt=""
-              className="w-9 h-9 rounded-full object-cover ring-2 ring-white/10"
-            />
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-brand-600/30 flex items-center justify-center text-brand-400 font-bold text-sm ring-2 ring-white/10">
-              {user?.email?.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <button
-            onClick={handleSignOut}
-            className="p-2 text-slate-500 hover:text-danger active:text-danger hover:bg-danger/10 rounded-xl transition-colors"
-            title="Sign out"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-            </svg>
-          </button>
+        <div className="flex items-center gap-4">
+          <LanguageSwitcher />
+          <div className="flex items-center gap-3">
+            {user?.user_metadata?.avatar_url ? (
+              <img
+                src={user.user_metadata.avatar_url}
+                alt=""
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-white/10"
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-brand-600/30 flex items-center justify-center text-brand-400 font-bold text-sm ring-2 ring-white/10">
+                {user?.email?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <button
+              onClick={handleSignOut}
+              className="p-2 text-slate-500 hover:text-danger active:text-danger hover:bg-danger/10 rounded-xl transition-colors"
+              title="Sign out"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -485,8 +494,8 @@ export default function RoomsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
           </div>
-          <h3 className="text-white font-bold text-base mb-1">Create</h3>
-          <p className="text-slate-500 text-xs leading-relaxed">Start a new household</p>
+          <h3 className="text-white font-bold text-base mb-1">{t("create")}</h3>
+          <p className="text-slate-500 text-xs leading-relaxed">{t("start_new_household")}</p>
         </button>
 
         <button
@@ -499,8 +508,8 @@ export default function RoomsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M18 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM3 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 019.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
             </svg>
           </div>
-          <h3 className="text-white font-bold text-base mb-1">Join</h3>
-          <p className="text-slate-500 text-xs leading-relaxed">Use an invite code</p>
+          <h3 className="text-white font-bold text-base mb-1">{t("join")}</h3>
+          <p className="text-slate-500 text-xs leading-relaxed">{t("use_invite_code")}</p>
         </button>
       </div>
 
@@ -513,7 +522,7 @@ export default function RoomsPage() {
         </div>
       ) : rooms && rooms.length > 0 ? (
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Your Households</h3>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">{t("your_households")}</h3>
           {rooms.map((membership) => (
             <RoomCard
               key={membership.room_id}
@@ -533,9 +542,9 @@ export default function RoomsPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205l3 1m1.5.5l-1.5-.5M6.75 7.364V3h-3v18m3-13.636l10.5-3.819" />
             </svg>
           </div>
-          <h2 className="text-xl font-bold text-white mb-2">No rooms yet</h2>
+          <h2 className="text-xl font-bold text-white mb-2">{t("no_rooms_yet")}</h2>
           <p className="text-slate-400 text-sm max-w-xs mx-auto">
-            Create a new room to start tracking chores with your roommates, or join one using an invite code.
+            {t("create_room_prompt")}
           </p>
         </div>
       )}

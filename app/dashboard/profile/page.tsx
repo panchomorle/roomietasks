@@ -5,9 +5,11 @@ import { currentRoomIdAtom } from "@/store/atoms";
 import { useAuth } from "@/hooks/useAuth";
 import { useRooms, useRoom } from "@/hooks/queries/useRooms";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
 
 export default function ProfilePage() {
+  const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const [currentRoomId, setCurrentRoomId] = useAtom(currentRoomIdAtom);
   const { data: rooms } = useRooms();
@@ -21,7 +23,7 @@ export default function ProfilePage() {
 
   return (
     <div className="pb-10 pt-2">
-      <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-8">Profile & Settings</h1>
+      <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight mb-8">{t("profile_settings")}</h1>
 
       {/* User Info Card */}
       <div className="bg-white/[0.03] border border-white/[0.06] rounded-[28px] p-6 mb-8 flex items-center gap-5">
@@ -40,7 +42,7 @@ export default function ProfilePage() {
 
       {/* Household Selector */}
       <div className="mb-8">
-        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2">Your Households</h3>
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2">{t("your_households")}</h3>
         <div className="bg-white/[0.03] border border-white/[0.06] rounded-[24px] overflow-hidden">
           {rooms && rooms.length > 0 ? (
             <div className="divide-y divide-white/5">
@@ -57,7 +59,7 @@ export default function ProfilePage() {
                       {member.rooms?.name}
                     </p>
                     {currentRoomId === member.room_id && (
-                      <p className="text-xs text-brand-500/70 mt-0.5">Active Room</p>
+                      <p className="text-xs text-brand-500/70 mt-0.5">{t("active_room")}</p>
                     )}
                   </div>
                   {currentRoomId === member.room_id && (
@@ -67,7 +69,7 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <div className="p-6 text-center text-slate-500 text-sm">You are not in any rooms yet.</div>
+            <div className="p-6 text-center text-slate-500 text-sm">{t("not_in_any_rooms")}</div>
           )}
         </div>
         
@@ -90,10 +92,10 @@ export default function ProfilePage() {
       {/* Active Room Settings (if any) */}
       {currentRoom && (
         <div className="mb-8">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2">Active Room Details</h3>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2">{t("active_room_details")}</h3>
           <div className="bg-white/[0.03] border border-white/[0.06] rounded-[24px] p-5 space-y-4">
             <div className="flex justify-between items-center bg-white/5 p-3 rounded-xl">
-              <span className="text-slate-400 text-sm font-medium">Invite Code</span>
+              <span className="text-slate-400 text-sm font-medium">{t("invite_code")}</span>
               <span className="text-white font-mono font-bold tracking-widest">{currentRoom.invite_code}</span>
             </div>
           </div>

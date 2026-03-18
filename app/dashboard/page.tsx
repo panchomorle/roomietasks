@@ -10,8 +10,12 @@ import { useState } from "react";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
 import { PointLimitModal } from "@/components/PointLimitModal";
 
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+
 // ─── Task Card ───────────────────────────────────────────────
 function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmin: boolean }) {
+  const { t } = useTranslation();
   const claimTask = useClaimTask();
   const unclaimTask = useUnclaimTask();
   const completeTask = useCompleteTask();
@@ -93,7 +97,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
                     onClick={() => unclaimTask.mutate({ taskId: task.id })}
                     className="text-xs font-medium text-slate-500 hover:text-red-400 active:text-red-400 px-2 py-1"
                   >
-                    Drop
+                    {t("drop")}
                   </button>
                 )}
               </div>
@@ -103,7 +107,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
                 disabled={claimTask.isPending}
                 className="px-4 py-2 bg-brand-600/20 hover:bg-brand-600/30 active:bg-brand-600/40 text-brand-400 text-sm font-semibold rounded-xl transition-all"
               >
-                Claim
+                {t("claim")}
               </button>
             )}
           </div>
@@ -134,7 +138,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
                   className="w-full text-left px-4 py-3 text-sm text-slate-300 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-2"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>
-                  Edit
+                  {t("edit_task")}
                 </button>
                 {isAdmin && (
                   <button
@@ -148,7 +152,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
                     className="w-full text-left px-4 py-3 text-sm text-danger hover:bg-danger/10 transition-colors flex items-center gap-2 border-t border-white/5"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" /></svg>
-                    {deleteTask.isPending ? "Deleting..." : "Delete"}
+                    {deleteTask.isPending ? t("deleting") : t("delete")}
                   </button>
                 )}
               </div>
@@ -166,7 +170,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            Mark Completed
+            {t("mark_completed")}
           </button>
         )}
       </div>
@@ -194,6 +198,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
 
 // ─── Edit Task Drawer ────────────────────────────────────────
 function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
+  const { t } = useTranslation();
   const editTemplate = useEditTaskTemplate();
   const template = task.template;
   const initialRecurrence = template?.recurrence_pattern || { type: "none" };
@@ -257,7 +262,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
 
   return (
     <DraggableDrawer onClose={onClose}>
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Edit Task</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("edit_task")}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 pb-8">
         <div>
@@ -267,7 +272,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all font-medium"
-            placeholder="E.g. Take out the trash"
+            placeholder={t("task_title_placeholder")}
           />
         </div>
         <div>
@@ -275,13 +280,13 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 resize-none h-24 transition-all"
-            placeholder="Any specific instructions?"
+            placeholder={t("any_instructions")}
           />
         </div>
 
         {/* Points */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-          <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Points</label>
+          <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("points_label")}</label>
           <input
             type="number"
             min={1}
@@ -301,7 +306,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
               !form.isRepeating ? "bg-white/10 text-white shadow" : "text-slate-500"
             }`}
           >
-            One-time
+            {t("one_time")}
           </button>
           <button
             type="button"
@@ -310,7 +315,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
               form.isRepeating ? "bg-white/10 text-white shadow" : "text-slate-500"
             }`}
           >
-            Repeating
+            {t("repeating")}
           </button>
         </div>
 
@@ -319,7 +324,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
           <div className="space-y-4 animate-fade-in">
             {/* Type selector */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Frequency</label>
+              <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">{t("frequency")}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(["daily", "weekly", "biweekly", "monthly"] as const).map((type) => (
                   <button
@@ -332,7 +337,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
                         : "bg-white/5 text-slate-400 hover:text-white"
                     }`}
                   >
-                    {type === "biweekly" ? "Bi-weekly" : type}
+                    {t(type)}
                   </button>
                 ))}
               </div>
@@ -342,10 +347,10 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
             {form.recurrenceType === "weekly" && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
-                  On specific days <span className="text-slate-500">(optional)</span>
+                  {t("on_specific_days")} <span className="text-slate-500">({t("optional")})</span>
                 </label>
                 <div className="flex justify-between gap-1.5">
-                  {DAY_LABELS.map((label, idx) => (
+                  {[t("day_s"), t("day_m"), t("day_t"), t("day_w"), t("day_th"), t("day_f"), t("day_sa")].map((label, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -370,9 +375,9 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
               className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-4 transition-all hover:bg-white/[0.07]"
             >
               <div className="text-left">
-                <p className="text-sm font-semibold text-white">Starts Today</p>
+                <p className="text-sm font-semibold text-white">{t("starts_today")}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  If off, first task delayed to next cycle
+                  {t("starts_today_hint")}
                 </p>
               </div>
               <div className={`w-11 h-6 rounded-full flex-shrink-0 transition-colors relative flex items-center px-1 ${
@@ -402,9 +407,9 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
                 )}
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Spawn next only after completion</p>
+                <p className="text-sm font-semibold text-white">{t("spawn_after_completion")}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Next task due date is calculated from when you finish, not the original schedule.
+                  {t("spawn_on_completion_hint")}
                 </p>
               </div>
             </button>
@@ -417,7 +422,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
             disabled={editTemplate.isPending}
             className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
           >
-            {editTemplate.isPending ? "Saving..." : "Save Changes"}
+            {editTemplate.isPending ? t("saving") : t("save_changes")}
           </button>
         </div>
       </form>
@@ -437,6 +442,7 @@ function CreateTaskDrawer({
   userId: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const createTemplate = useCreateTaskTemplate();
   const [form, setForm] = useState({
     title: "",
@@ -498,7 +504,7 @@ function CreateTaskDrawer({
 
   return (
     <DraggableDrawer onClose={onClose}>
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">New Task</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("new_task")}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
         <div>
@@ -508,7 +514,7 @@ function CreateTaskDrawer({
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white text-lg placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 transition-all font-medium"
-            placeholder="E.g. Take out the trash"
+            placeholder={t("task_title_placeholder")}
           />
         </div>
         <div>
@@ -516,13 +522,13 @@ function CreateTaskDrawer({
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-brand-500/50 resize-none h-24 transition-all"
-            placeholder="Any specific instructions?"
+            placeholder={t("any_instructions")}
           />
         </div>
 
         {/* Points */}
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-          <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Points</label>
+          <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("points_label")}</label>
           <input
             type="number"
             min={1}
@@ -542,7 +548,7 @@ function CreateTaskDrawer({
               !form.isRepeating ? "bg-white/10 text-white shadow" : "text-slate-500"
             }`}
           >
-            One-time
+            {t("one_time")}
           </button>
           <button
             type="button"
@@ -551,7 +557,7 @@ function CreateTaskDrawer({
               form.isRepeating ? "bg-white/10 text-white shadow" : "text-slate-500"
             }`}
           >
-            Repeating
+            {t("repeating")}
           </button>
         </div>
 
@@ -560,7 +566,7 @@ function CreateTaskDrawer({
           <div className="space-y-4 animate-fade-in">
             {/* Type selector */}
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">Frequency</label>
+              <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">{t("frequency")}</label>
               <div className="grid grid-cols-4 gap-2">
                 {(["daily", "weekly", "biweekly", "monthly"] as const).map((type) => (
                   <button
@@ -573,7 +579,7 @@ function CreateTaskDrawer({
                         : "bg-white/5 text-slate-400 hover:text-white"
                     }`}
                   >
-                    {type === "biweekly" ? "Bi-weekly" : type}
+                    {t(type)}
                   </button>
                 ))}
               </div>
@@ -583,10 +589,10 @@ function CreateTaskDrawer({
             {form.recurrenceType === "weekly" && (
               <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
                 <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-3">
-                  On specific days <span className="text-slate-500">(optional)</span>
+                  {t("on_specific_days")} <span className="text-slate-500">({t("optional")})</span>
                 </label>
                 <div className="flex justify-between gap-1.5">
-                  {DAY_LABELS.map((label, idx) => (
+                  {[t("day_s"), t("day_m"), t("day_t"), t("day_w"), t("day_th"), t("day_f"), t("day_sa")].map((label, idx) => (
                     <button
                       key={idx}
                       type="button"
@@ -611,9 +617,9 @@ function CreateTaskDrawer({
               className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-4 transition-all hover:bg-white/[0.07]"
             >
               <div className="text-left">
-                <p className="text-sm font-semibold text-white">Starts Today</p>
+                <p className="text-sm font-semibold text-white">{t("starts_today")}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  If off, first task delayed to next cycle
+                  {t("starts_today_hint")}
                 </p>
               </div>
               <div className={`w-11 h-6 rounded-full flex-shrink-0 transition-colors relative flex items-center px-1 ${
@@ -643,9 +649,9 @@ function CreateTaskDrawer({
                 )}
               </div>
               <div>
-                <p className="text-sm font-semibold text-white">Spawn next only after completion</p>
+                <p className="text-sm font-semibold text-white">{t("spawn_after_completion")}</p>
                 <p className="text-[11px] text-slate-500 mt-0.5">
-                  Next task due date is calculated from when you finish, not the original schedule.
+                  {t("spawn_on_completion_hint")}
                 </p>
               </div>
             </button>
@@ -658,7 +664,7 @@ function CreateTaskDrawer({
             disabled={createTemplate.isPending}
             className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
           >
-            {createTemplate.isPending ? "Creating..." : "Create Task"}
+            {createTemplate.isPending ? t("creating") : t("new_task")}
           </button>
         </div>
       </form>
@@ -668,6 +674,7 @@ function CreateTaskDrawer({
 
 // ─── Main Tasks Page ─────────────────────────────────────────
 export default function TasksPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [filter, setFilter] = useAtom(taskFilterAtom);
@@ -680,9 +687,9 @@ export default function TasksPage() {
   const currentUserRole = members?.find((m: any) => m.user_id === user?.id)?.role;
 
   const filters: { label: string; value: TaskFilter }[] = [
-    { label: "All", value: "all" },
-    { label: "Unassigned", value: "unassigned" },
-    { label: "Mine", value: "mine" },
+    { label: t("all"), value: "all" },
+    { label: t("unassigned"), value: "unassigned" },
+    { label: t("mine"), value: "mine" },
   ];
 
   if (!roomId && !roomLoading) {
@@ -693,8 +700,8 @@ export default function TasksPage() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-white mb-2">No Room Selected</h2>
-        <p className="text-slate-400 mb-8 max-w-sm">Create a new household or join one from your Profile tab to start tracking chores.</p>
+        <h2 className="text-2xl font-bold text-white mb-2">{t("no_room_selected")}</h2>
+        <p className="text-slate-400 mb-8 max-w-sm">{t("create_household_prompt")}</p>
       </div>
     );
   }
@@ -702,9 +709,12 @@ export default function TasksPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-6 pt-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Pending Tasks</h1>
-        {room && <p className="text-sm font-medium text-brand-400 mt-1">{room.name}</p>}
+      <div className="mb-6 pt-2 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("pending_tasks")}</h1>
+          {room && <p className="text-sm font-medium text-brand-400 mt-1">{room.name}</p>}
+        </div>
+        <LanguageSwitcher />
       </div>
 
       {/* Scrollable Filter Pills */}
@@ -735,7 +745,7 @@ export default function TasksPage() {
             <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
               <span className="text-2xl">🎉</span>
             </div>
-            <p className="text-slate-400 font-medium">No pending tasks here!</p>
+            <p className="text-slate-400 font-medium">{t("no_pending_tasks")}</p>
           </div>
         )}
       </div>

@@ -4,6 +4,7 @@ import React from 'react';
 import { useLeaderboard } from '@/hooks/queries/useTasks';
 import { useRoom, useRoomMembers } from '@/hooks/queries/useRooms';
 import type { Tables } from '@/types/database';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Room = Tables<'rooms'>;
 
@@ -16,6 +17,7 @@ interface EndSeasonModalProps {
 }
 
 export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomProp }: EndSeasonModalProps) {
+  const { t } = useTranslation();
   const { data: fetchedRoom } = useRoom(roomProp ? null : roomId);
   const room = roomProp ?? fetchedRoom;
 
@@ -78,7 +80,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
       >
         {/* Header */}
         <div className="text-center pt-6 pb-2 px-6">
-          <h2 className="text-2xl font-black text-white">Season Summary</h2>
+          <h2 className="text-2xl font-black text-white">{t("season_summary")}</h2>
           <p className="text-sm text-slate-400 mt-1">{room?.name}</p>
         </div>
 
@@ -86,15 +88,15 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
         <div className="flex justify-center gap-6 px-6 py-4">
           <div className="text-center">
             <p className="text-2xl font-black text-white">${totalPool.toFixed(2)}</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Prize Pool</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{t("prize_pool")}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-black text-brand-400">{totalPoints}</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Points</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{t("total_points")}</p>
           </div>
           <div className="text-center">
             <p className="text-2xl font-black text-brand-300">{totalTasks}</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Tasks Done</p>
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">{t("tasks_done")}</p>
           </div>
         </div>
 
@@ -127,7 +129,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
                     <p className="text-xs font-semibold text-white truncate w-full text-center">
                       {entry.fullName}
                     </p>
-                    <p className="text-[10px] text-slate-400">{entry.points} pts</p>
+                    <p className="text-[10px] text-slate-400">{entry.points} {t("pts")}</p>
                     {/* Podium Bar */}
                     <div className={`w-full ${meta.height} ${meta.color} rounded-t-xl mt-2 flex items-center justify-center`}>
                       <span className={`text-xs font-black ${meta.textColor}`}>{meta.label}</span>
@@ -141,7 +143,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
 
         {/* Participant Breakdown */}
         <div className="px-4 pb-2">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">Prize Distribution</h3>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">{t("prize_distribution")}</h3>
           <div className="space-y-1">
             {allParticipants.map((entry, i) => (
               <div key={entry.userId} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.03]">
@@ -157,7 +159,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{entry.fullName}</p>
                     <p className="text-[11px] text-slate-500">
-                      {entry.points} pts &middot; {entry.tasksCompleted} tasks &middot; {entry.pct.toFixed(1)}%
+                      {entry.points} {t("pts")} &middot; {entry.tasksCompleted} {t("tasks")} &middot; {entry.pct.toFixed(1)}%
                     </p>
                   </div>
                 </div>
@@ -175,13 +177,13 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
             onClick={onClose}
             className="flex-1 py-3 rounded-2xl text-slate-300 font-semibold bg-white/5 hover:bg-white/10 transition-colors"
           >
-            Cancel
+            {t("cancel")}
           </button>
           <button
             onClick={onConfirm}
             className="flex-1 py-3 bg-warning text-slate-900 font-bold rounded-2xl hover:brightness-110 transition-all shadow-lg shadow-warning/20"
           >
-            End Season
+            {t("end_season")}
           </button>
         </div>
       </div>

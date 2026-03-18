@@ -6,8 +6,11 @@ import { useCompletedTasks } from "@/hooks/queries/useTasks";
 import { useUncompleteTask } from "@/hooks/mutations/useTaskMutations";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function HistoryPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [loadCount, setLoadCount] = useState(20);
@@ -17,16 +20,19 @@ export default function HistoryPage() {
   if (!roomId) {
     return (
       <div className="text-center py-20">
-        <p className="text-slate-500">Select a room to view history.</p>
+        <p className="text-slate-500">{t("select_room_history")}</p>
       </div>
     );
   }
 
   return (
     <div className="pb-20 pt-2">
-      <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Completed</h1>
-        <p className="text-sm font-medium text-slate-500 mt-1">Last 7 days</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("completed")}</h1>
+          <p className="text-sm font-medium text-slate-500 mt-1">{t("last_7_days")}</p>
+        </div>
+        <LanguageSwitcher />
       </div>
 
       {isLoading ? (
@@ -53,10 +59,10 @@ export default function HistoryPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-medium text-[15px] sm:text-base line-through opacity-60 leading-tight">{task.title}</h3>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[11px] sm:text-xs text-slate-500 font-medium tracking-wide">
-                      <span className="text-brand-400">{task.points_reward} pts</span>
+                      <span className="text-brand-400">{task.points_reward} {t("pts")}</span>
                       <span>•</span>
                       <span>
-                        by{" "}
+                        {t("by")}{" "}
                         <span className="text-slate-400">
                           {completer?.full_name || "Unknown"}
                         </span>
@@ -64,7 +70,7 @@ export default function HistoryPage() {
                       {task.completed_at && (
                         <>
                           <span>•</span>
-                          <span>{new Date(task.completed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                          <span>{new Date(task.completed_at).toLocaleDateString(t("language_code"), { month: 'short', day: 'numeric' })}</span>
                         </>
                       )}
                     </div>
@@ -73,7 +79,7 @@ export default function HistoryPage() {
                     onClick={() => uncompleteTask.mutate({ taskId: task.id })}
                     disabled={uncompleteTask.isPending}
                     className="p-2.5 text-slate-500 hover:text-warning active:text-warning hover:bg-warning/10 active:bg-warning/15 rounded-xl transition-all -mr-1 sm:mr-0 flex-shrink-0"
-                    title="Mark as incomplete"
+                    title={t("mark_as_incomplete")}
                   >
                     <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
@@ -90,7 +96,7 @@ export default function HistoryPage() {
                 onClick={() => setLoadCount((c) => c + 20)}
                 className="w-full sm:w-auto px-8 py-4 bg-white/5 hover:bg-white/10 active:bg-white/15 text-white rounded-2xl font-bold transition-colors border border-white/5"
               >
-                Load More
+                {t("load_more")}
               </button>
             </div>
           )}
@@ -102,7 +108,7 @@ export default function HistoryPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="text-slate-400 font-medium">No completed tasks this week.</p>
+          <p className="text-slate-400 font-medium">{t("no_completed_tasks")}</p>
         </div>
       )}
     </div>

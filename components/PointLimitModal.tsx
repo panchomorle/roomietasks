@@ -2,6 +2,7 @@
 
 import { DraggableDrawer } from "./DraggableDrawer";
 import { useUnclaimTask, useClaimTask } from "@/hooks/mutations/useTaskMutations";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PointLimitModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export function PointLimitModal({
   taskId,
   userId,
 }: PointLimitModalProps) {
+  const { t } = useTranslation();
   const unclaimTask = useUnclaimTask();
   const claimTask = useClaimTask();
 
@@ -63,28 +65,36 @@ export function PointLimitModal({
         </div>
 
         <h2 className={`text-2xl font-black text-white mb-3`}>
-          {isPointLimit ? "Limit Reached!" : isClaimWarning ? "Point Warning" : isCooldown ? "Cooldown Active" : "Way Too Early!"}
+          {isPointLimit ? t("limit_reached") : isClaimWarning ? t("point_warning") : isCooldown ? t("cooldown_active") : t("too_early")}
         </h2>
         
         <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-[280px] mx-auto">
           {isPointLimit ? (
             <>
-              You've already earned <span className="text-white font-bold">{details?.current || 0}</span> points this {details?.period || 'period'}. 
-              Completing this would exceed your <span className="text-brand-400 font-bold">{details?.limit}pt</span> limit.
+              {t("point_limit_desc")
+                .replace("{current}", details?.current || "0")
+                .replace("{period}", t(details?.period || "period"))
+                .replace("{limit}", details?.limit || "0")}
             </>
           ) : isClaimWarning ? (
             <>
-              Claiming this task (<span className="text-white font-bold">{details?.pending_reward}pt</span>) might push you over your <span className="text-brand-400 font-bold">{details?.limit}pt</span> {details?.period}ly limit.
+              {t("claim_warning_desc")
+                .replace("{pending}", details?.pending_reward || "0")
+                .replace("{limit}", details?.limit || "0")
+                .replace("{period}", t(details?.period || "")) }
               <br/><br/>
-              Current status: <span className="text-white">{details?.earned || 0}</span> earned + <span className="text-white">{details?.assigned || 0}</span> already claimed.
+              {t("current_status")
+                .replace("{earned}", details?.earned || "0")
+                .replace("{assigned}", details?.assigned || "0")}
             </>
           ) : isCooldown ? (
             <>
-              You completed this recurrent task recently. 
-              To keep things fair, you must wait <span className="text-indigo-400 font-bold">{details?.remaining_days}d {details?.remaining_hours}h</span> before claiming it again.
+              {t("cooldown_desc")
+                .replace("{days}", details?.remaining_days || "0")
+                .replace("{hours}", details?.remaining_hours || "0")}
             </>
           ) : (
-            details?.message || "You completed this task too recently."
+            details?.message || t("too_early_desc")
           )}
         </p>
 
@@ -96,13 +106,13 @@ export function PointLimitModal({
                 disabled={claimTask.isPending}
                 className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
               >
-                {claimTask.isPending ? "Claiming..." : "Claim anyway"}
+                {claimTask.isPending ? t("claiming") : t("claim_anyway")}
               </button>
               <button
                 onClick={onClose}
                 className="w-full py-4 bg-white/5 hover:bg-white/10 text-slate-400 rounded-2xl font-bold text-lg transition-all border border-white/10"
               >
-                Cancel
+                {t("cancel")}
               </button>
             </>
           ) : (
@@ -113,7 +123,7 @@ export function PointLimitModal({
                   disabled={unclaimTask.isPending}
                   className="w-full py-4 bg-white/5 hover:bg-red-500/10 text-red-400 rounded-2xl font-bold text-lg transition-all border border-white/10 hover:border-red-500/20"
                 >
-                  {unclaimTask.isPending ? "Dropping..." : "Give up task"}
+                  {unclaimTask.isPending ? t("dropping") : t("give_up_task")}
                 </button>
               )}
               
@@ -121,7 +131,7 @@ export function PointLimitModal({
                 onClick={onClose}
                 className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
               >
-                Got it
+                {t("got_it")}
               </button>
             </>
           )}
@@ -129,7 +139,7 @@ export function PointLimitModal({
 
         {(isPointLimit || isClaimWarning) && (
           <p className="text-[10px] text-slate-500 mt-6 font-medium uppercase tracking-widest">
-            Fair play keeps the room happy
+            {t("fair_play")}
           </p>
         )}
       </div>

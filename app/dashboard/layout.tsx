@@ -8,8 +8,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { SeasonManager } from "@/components/SeasonManager";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const { user, loading: authLoading } = useAuth();
   const [currentRoomId, setCurrentRoomId] = useAtom(currentRoomIdAtom);
   const { data: rooms, isLoading: roomsLoading } = useRooms();
@@ -33,7 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [authLoading, roomsLoading, hasRooms, pathname, router]);
 
   const roomsTab = {
-    label: "Rooms",
+    label: t("rooms"),
     href: "/dashboard/rooms",
     icon: (
       <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -44,7 +46,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const featureTabs = [
     {
-      label: "Tasks",
+      label: t("tasks"),
       href: "/dashboard",
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -53,7 +55,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       ),
     },
     {
-      label: "Board",
+      label: t("board"),
       href: "/dashboard/leaderboard",
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
@@ -62,7 +64,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       ),
     },
     {
-      label: "History",
+      label: t("history"),
       href: "/dashboard/history",
       icon: (
         <svg fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DraggableDrawer } from "./DraggableDrawer";
 import { useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface RoomSettingsDrawerProps {
   room: any;
@@ -10,6 +11,7 @@ interface RoomSettingsDrawerProps {
 }
 
 export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
+  const { t } = useTranslation();
   const updateRoom = useUpdateRoom();
   const [form, setForm] = useState({
     name: room.name,
@@ -38,11 +40,11 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
 
   return (
     <DraggableDrawer onClose={onClose}>
-      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Room Settings</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("room_settings")}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4 pb-8">
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Household name</label>
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t("household_name")}</label>
           <input
             type="text"
             required
@@ -54,7 +56,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
 
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Contribution ($)</label>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("contribution_label")}</label>
             <input
               type="number"
               min={0}
@@ -66,7 +68,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
             />
           </div>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Period (days)</label>
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("period_days_label")}</label>
             <input
               type="number"
               min={1}
@@ -80,7 +82,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Point Limit</label>
+            <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider">{t("point_limit")}</label>
             <div className="flex bg-white/5 rounded-lg p-0.5">
               {(["day", "week", "month"] as const).map((p) => (
                 <button
@@ -93,7 +95,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
                       : "text-slate-500 hover:text-slate-300"
                   }`}
                 >
-                  {p}
+                  {t(p)}
                 </button>
               ))}
             </div>
@@ -105,14 +107,14 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
               value={form.pointLimit}
               onChange={(e) => setForm({ ...form, pointLimit: parseInt(e.target.value) || 0 })}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
-              placeholder="No limit"
+              placeholder={t("no_limit")}
             />
-            <span className="text-sm font-medium text-slate-500">points/{form.pointLimitPeriod}</span>
+            <span className="text-sm font-medium text-slate-500">{t("pts")}/{t(form.pointLimitPeriod)}</span>
           </div>
         </div>
 
         <div className="bg-brand-500/5 border border-brand-500/20 rounded-2xl p-4">
-          <label className="block text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2">Recurrent Task Cooldown</label>
+          <label className="block text-xs font-semibold text-brand-400 uppercase tracking-wider mb-2">{t("recurrent_cooldown")}</label>
           <div className="flex items-center gap-3">
             <input
               type="number"
@@ -121,10 +123,10 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
               onChange={(e) => setForm({ ...form, cooldownDays: parseInt(e.target.value) || 0 })}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
             />
-            <span className="text-sm font-medium text-slate-500">days</span>
+            <span className="text-sm font-medium text-slate-500">{t("day")}</span>
           </div>
           <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-            Time a member must wait after completing a task before claiming it again. Set to 0 to disable.
+            {t("cooldown_description")}
           </p>
         </div>
 
@@ -134,7 +136,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
             disabled={updateRoom.isPending}
             className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20 disabled:opacity-50"
           >
-            {updateRoom.isPending ? "Saving..." : "Save Settings"}
+            {updateRoom.isPending ? t("saving") : t("save_settings")}
           </button>
         </div>
       </form>
