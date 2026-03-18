@@ -12,10 +12,12 @@ import { PointLimitModal } from "@/components/PointLimitModal";
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { formatTaskDate } from "@/lib/dateUtils";
+import { formatPoints } from "@/lib/numberUtils";
 
 // ─── Task Card ───────────────────────────────────────────────
 function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmin: boolean }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const claimTask = useClaimTask();
   const unclaimTask = useUnclaimTask();
   const completeTask = useCompleteTask();
@@ -60,6 +62,13 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
   const isAssignedToMe = task.assigned_user_id === userId;
   const assignedProfile = task.profiles as { full_name: string | null; avatar_url: string | null } | null;
 
+  // Normalizing to midnight to avoid false positives for "today"
+  const taskDate = new Date(task.due_date);
+  const dateMidnight = new Date(taskDate.getUTCFullYear(), taskDate.getUTCMonth(), taskDate.getUTCDate());
+  const now = new Date();
+  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const isExpired = dateMidnight < nowMidnight;
+
   return (
     <>
       <div className="group relative bg-white/[0.04] active:bg-white/[0.08] sm:hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl p-4 sm:p-5 transition-all duration-200 animate-fade-in shadow-sm">
@@ -71,13 +80,13 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
             )}
             <div className="flex flex-wrap items-center gap-2 mt-3">
               <span className="inline-flex items-center gap-1.25 px-2 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-bold uppercase tracking-wider rounded-md">
-                {task.points_reward} pts
+                {formatPoints(task.points_reward, language as "en" | "es")} pts
               </span>
-              <span className="text-slate-500 text-xs flex items-center gap-1">
+              <span className={`text-xs flex items-center gap-1 ${isExpired ? "text-red-500 font-semibold" : "text-slate-500"}`}>
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                {new Date(task.due_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                <span className="capitalize">{formatTaskDate(task.due_date, language as "en" | "es")}</span>
               </span>
             </div>
           </div>
@@ -206,13 +215,13 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
   const [form, setForm] = useState({
     title: template?.title || task.title || "",
     description: template?.description || task.description || "",
-    pointsReward: template?.points_reward || task.points_reward || 10,
+    pointsReward: String(template?.points_reward || task.points_reward || 10),
     isRepeating: initialRecurrence.type !== "none",
     recurrenceType: (initialRecurrence.type === "none" ? "weekly" : initialRecurrence.type) as "daily" | "weekly" | "biweekly" | "monthly",
     weeklyDays: (initialRecurrence.days as number[]) || [], // 0=Sun, 1=Mon, ..., 6=Sat
     spawnOnCompletion: template?.spawn_on_completion || false,
     startsToday: false,
-    customDate: new Date(task.due_date).toISOString().split('T')[0],
+    customDate: (() => { const d = new Date(task.due_date); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); })(),
   });
 
   const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
@@ -243,7 +252,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     } else if (recurrenceType === "monthly") {
       date.setMonth(date.getMonth() + 1);
     }
-    setForm(prev => ({ ...prev, customDate: date.toISOString().split('T')[0] }));
+    setForm(prev => ({ ...prev, customDate: date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0') }));
   };
 
   const toggleDay = (day: number) => {
@@ -287,7 +296,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
       templateId: template.id,
       title: form.title,
       description: form.description,
-      pointsReward: form.pointsReward,
+      pointsReward: parseFloat(form.pointsReward as string) || 0,
       recurrencePattern,
       spawnOnCompletion: form.isRepeating ? form.spawnOnCompletion : false,
       startDate: startDateString,
@@ -324,10 +333,21 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
           <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("points_label")}</label>
           <input
             type="number"
-            min={1}
+            step="0.01" 
+            min={0.01} 
+            max={9999}
             required
             value={form.pointsReward}
-            onChange={(e) => setForm({ ...form, pointsReward: parseInt(e.target.value) })}
+            onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (val && !/^\d*\.?\d{0,2}$/.test(val)) {
+                const parts = val.split('.');
+                val = parts[0] + '.' + parts[1].slice(0, 2);
+              }
+              if (parseFloat(val) > 9999) val = "9999";
+              setForm({ ...form, pointsReward: val });
+            }}
             className="w-full bg-transparent text-xl font-bold text-white focus:outline-none"
           />
         </div>
@@ -517,13 +537,13 @@ function CreateTaskDrawer({
   const [form, setForm] = useState({
     title: "",
     description: "",
-    pointsReward: 10,
+    pointsReward: "10",
     isRepeating: true,
     recurrenceType: "weekly" as "daily" | "weekly" | "biweekly" | "monthly",
     weeklyDays: [] as number[], // 0=Sun, 1=Mon, ..., 6=Sat
     spawnOnCompletion: false,
     startsToday: true,
-    customDate: new Date().toISOString().split('T')[0],
+    customDate: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0'),
   });
 
   const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
@@ -598,7 +618,7 @@ function CreateTaskDrawer({
       roomId,
       title: form.title,
       description: form.description,
-      pointsReward: form.pointsReward,
+      pointsReward: parseFloat(form.pointsReward as string) || 0,
       recurrencePattern,
       spawnOnCompletion: form.isRepeating ? form.spawnOnCompletion : false,
       userId,
@@ -636,10 +656,21 @@ function CreateTaskDrawer({
           <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("points_label")}</label>
           <input
             type="number"
-            min={1}
+            step="0.01" 
+            min={0.01} 
+            max={9999}
             required
             value={form.pointsReward}
-            onChange={(e) => setForm({ ...form, pointsReward: parseInt(e.target.value) })}
+            onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+            onChange={(e) => {
+              let val = e.target.value;
+              if (val && !/^\d*\.?\d{0,2}$/.test(val)) {
+                const parts = val.split('.');
+                val = parts[0] + '.' + parts[1].slice(0, 2);
+              }
+              if (parseFloat(val) > 9999) val = "9999";
+              setForm({ ...form, pointsReward: val });
+            }}
             className="w-full bg-transparent text-xl font-bold text-white focus:outline-none"
           />
         </div>

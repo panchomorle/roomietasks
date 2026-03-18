@@ -17,7 +17,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
     name: room.name,
     contribution: room.contribution_per_member,
     periodDays: room.period_duration_days,
-    pointLimit: room.point_limit || 0,
+    pointLimit: room.point_limit != null ? String(room.point_limit) : "0",
     pointLimitPeriod: (room.point_limit_period as "day" | "week" | "month") || "week",
     cooldownDays: room.recurrent_cooldown_days || 0,
   });
@@ -30,8 +30,8 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
         name: form.name,
         contribution_per_member: form.contribution,
         period_duration_days: form.periodDays,
-        point_limit: form.pointLimit > 0 ? form.pointLimit : null,
-        point_limit_period: form.pointLimit > 0 ? form.pointLimitPeriod : null,
+        point_limit: (parseFloat(form.pointLimit as string) || 0) > 0 ? parseFloat(form.pointLimit as string) : null,
+        point_limit_period: (parseFloat(form.pointLimit as string) || 0) > 0 ? form.pointLimitPeriod : null,
         recurrent_cooldown_days: form.cooldownDays,
       } as any,
     });
@@ -102,10 +102,20 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
           </div>
           <div className="flex items-center gap-3">
             <input
-              type="number"
-              min={0}
-              value={form.pointLimit}
-              onChange={(e) => setForm({ ...form, pointLimit: parseInt(e.target.value) || 0 })}
+                type="number"
+                min={0}
+                max={9999}
+                value={form.pointLimit}
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val && !/^\d*\.?\d{0,2}$/.test(val)) {
+                    const parts = val.split('.');
+                    val = parts[0] + '.' + parts[1].slice(0, 2);
+                  }
+                  if (parseFloat(val) > 9999) val = "9999";
+                  setForm({ ...form, pointLimit: val });
+                }}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
               placeholder={t("no_limit")}
             />

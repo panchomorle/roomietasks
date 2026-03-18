@@ -5,6 +5,7 @@ import { useLeaderboard } from '@/hooks/queries/useTasks';
 import { useRoom, useRoomMembers } from '@/hooks/queries/useRooms';
 import type { Tables } from '@/types/database';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatPoints } from '@/lib/numberUtils';
 
 type Room = Tables<'rooms'>;
 
@@ -17,7 +18,7 @@ interface EndSeasonModalProps {
 }
 
 export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomProp }: EndSeasonModalProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { data: fetchedRoom } = useRoom(roomProp ? null : roomId);
   const room = roomProp ?? fetchedRoom;
 
@@ -129,7 +130,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
                     <p className="text-xs font-semibold text-white truncate w-full text-center">
                       {entry.fullName}
                     </p>
-                    <p className="text-[10px] text-slate-400">{entry.points} {t("pts")}</p>
+                    <p className="text-[10px] text-slate-400">{formatPoints(entry.points, language as 'en' | 'es')} {t("pts")}</p>
                     {/* Podium Bar */}
                     <div className={`w-full ${meta.height} ${meta.color} rounded-t-xl mt-2 flex items-center justify-center`}>
                       <span className={`text-xs font-black ${meta.textColor}`}>{meta.label}</span>
@@ -159,7 +160,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-white truncate">{entry.fullName}</p>
                     <p className="text-[11px] text-slate-500">
-                      {entry.points} {t("pts")} &middot; {entry.tasksCompleted} {t("tasks")} &middot; {entry.pct.toFixed(1)}%
+                      {formatPoints(entry.points, language as 'en' | 'es')} {t("pts")} &middot; {entry.tasksCompleted} {t("tasks")} &middot; {entry.pct.toFixed(1)}%
                     </p>
                   </div>
                 </div>

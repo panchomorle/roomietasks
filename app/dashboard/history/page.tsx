@@ -8,9 +8,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { formatPoints } from "@/lib/numberUtils";
+import { formatTaskDate } from "@/lib/dateUtils";
 
 export default function HistoryPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [loadCount, setLoadCount] = useState(20);
@@ -59,7 +61,7 @@ export default function HistoryPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-medium text-[15px] sm:text-base line-through opacity-60 leading-tight">{task.title}</h3>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[11px] sm:text-xs text-slate-500 font-medium tracking-wide">
-                      <span className="text-brand-400">{task.points_reward} {t("pts")}</span>
+                      <span className="text-brand-400">{formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}</span>
                       <span>•</span>
                       <span>
                         {t("by")}{" "}
@@ -70,7 +72,7 @@ export default function HistoryPage() {
                       {task.completed_at && (
                         <>
                           <span>•</span>
-                          <span>{new Date(task.completed_at).toLocaleDateString(t("language_code"), { month: 'short', day: 'numeric' })}</span>
+                          <span className="capitalize">{formatTaskDate(task.completed_at, language as 'en' | 'es')}</span>
                         </>
                       )}
                     </div>

@@ -10,9 +10,10 @@ import { EndSeasonModal } from "@/components/EndSeasonModal";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { formatPoints } from "@/lib/numberUtils";
 
 export default function LeaderboardPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
 
@@ -262,7 +263,7 @@ export default function LeaderboardPage() {
                           {entry.role === "admin" && <span className="ml-2 text-[10px] text-slate-400 bg-white/5 px-1.5 py-0.5 rounded uppercase tracking-wider">{t("admin")}</span>}
                         </p>
                       </div>
-                      <p className="text-xs text-slate-400 font-medium">{entry.points} {t("points")}</p>
+                      <p className="text-xs text-slate-400 font-medium">{formatPoints(entry.points, language as 'en' | 'es')} {t("points")}</p>
                     </div>
                   </div>
 

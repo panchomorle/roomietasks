@@ -11,17 +11,18 @@ import { DraggableDrawer } from "@/components/DraggableDrawer";
 import { RoomSettingsDrawer } from "@/components/RoomSettingsDrawer";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { formatPoints } from "@/lib/numberUtils";
 
 // ─── Create Room Drawer ──────────────────────────────────────
 function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const createRoom = useCreateRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
   const [form, setForm] = useState({
     name: "",
     contribution: 50,
     periodDays: 30,
-    pointLimit: 0,
+    pointLimit: "0",
     pointLimitPeriod: "week" as "day" | "week" | "month",
   });
 
@@ -32,8 +33,8 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
       contributionPerMember: form.contribution,
       periodDurationDays: form.periodDays,
       userId,
-      pointLimit: form.pointLimit > 0 ? form.pointLimit : undefined,
-      pointLimitPeriod: form.pointLimit > 0 ? form.pointLimitPeriod : undefined,
+      pointLimit: (parseFloat(form.pointLimit as string) || 0) > 0 ? parseFloat(form.pointLimit as string) : undefined,
+      pointLimitPeriod: (parseFloat(form.pointLimit as string) || 0) > 0 ? form.pointLimitPeriod : undefined,
     });
     setCurrentRoomId(room.id);
     onClose();
@@ -103,10 +104,20 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
           </div>
           <div className="flex items-center gap-3">
             <input
-              type="number"
-              min={0}
-              value={form.pointLimit}
-              onChange={(e) => setForm({ ...form, pointLimit: parseInt(e.target.value) || 0 })}
+                type="number"
+                min={0}
+                max={9999}
+                value={form.pointLimit}
+                onKeyDown={(e) => ["e", "E", "+", "-"].includes(e.key) && e.preventDefault()}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  if (val && !/^\d*\.?\d{0,2}$/.test(val)) {
+                    const parts = val.split('.');
+                    val = parts[0] + '.' + parts[1].slice(0, 2);
+                  }
+                  if (parseFloat(val) > 9999) val = "9999";
+                  setForm({ ...form, pointLimit: val });
+                }}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
               placeholder={t("no_limit")}
             />
@@ -135,7 +146,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
 
 // ─── Join Room Drawer ────────────────────────────────────────
 function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const previewRoom = usePreviewRoom();
   const joinRoom = useJoinRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
@@ -255,7 +266,7 @@ function RoomCard({
   onOpenSettings: () => void;
   leavePending: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const room = membership.rooms;
   const [showInvite, setShowInvite] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -314,7 +325,7 @@ function RoomCard({
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
               </svg>
-              {t("point_limit")}: {room.point_limit} {t("pts")}/{t(room.point_limit_period)}
+              {t("point_limit")}: {formatPoints(room.point_limit, language as 'en' | 'es')} {t("pts")}/{t(room.point_limit_period)}
             </p>
           ) : (
              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-wider mt-1.5">{t("no_limit")}</p>
@@ -418,7 +429,7 @@ function RoomCard({
 
 // ─── Main Rooms Page ─────────────────────────────────────────
 export default function RoomsPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user, signOut } = useAuth();
   const { data: rooms, isLoading } = useRooms();
   const [currentRoomId, setCurrentRoomId] = useAtom(currentRoomIdAtom);
