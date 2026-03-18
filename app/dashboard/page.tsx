@@ -212,15 +212,53 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     weeklyDays: (initialRecurrence.days as number[]) || [], // 0=Sun, 1=Mon, ..., 6=Sat
     spawnOnCompletion: template?.spawn_on_completion || false,
     startsToday: false,
+    customDate: new Date(task.due_date).toISOString().split('T')[0],
   });
 
+  const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+
+    if (recurrenceType === "daily") {
+      date.setDate(date.getDate() + 1);
+    } else if (recurrenceType === "weekly") {
+      if (weeklyDays.length > 0) {
+        let nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        let found = false;
+        for (let i = 0; i < 7; i++) {
+          if (weeklyDays.includes(nextDate.getDay())) {
+            date.setTime(nextDate.getTime());
+            found = true;
+            break;
+          }
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+        if (!found) date.setDate(date.getDate() + 7);
+      } else {
+        date.setDate(date.getDate() + 7);
+      }
+    } else if (recurrenceType === "biweekly") {
+      date.setDate(date.getDate() + 14);
+    } else if (recurrenceType === "monthly") {
+      date.setMonth(date.getMonth() + 1);
+    }
+    setForm(prev => ({ ...prev, customDate: date.toISOString().split('T')[0] }));
+  };
+
   const toggleDay = (day: number) => {
+    const nextWeeklyDays = form.weeklyDays.includes(day)
+      ? form.weeklyDays.filter((d) => d !== day)
+      : [...form.weeklyDays, day].sort();
+    
     setForm((prev) => ({
       ...prev,
-      weeklyDays: prev.weeklyDays.includes(day)
-        ? prev.weeklyDays.filter((d) => d !== day)
-        : [...prev.weeklyDays, day].sort(),
+      weeklyDays: nextWeeklyDays,
     }));
+
+    if (!form.startsToday && form.recurrenceType === "weekly") {
+      updateDefaultStartDate("weekly", nextWeeklyDays);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -229,9 +267,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     let recurrencePattern: { type: string; days?: number[] };
     let startDateString: string | undefined = undefined;
 
-    if (!form.isRepeating) {
-      recurrencePattern = { type: "none" };
-    } else {
+    if (form.isRepeating) {
       if (form.recurrenceType === "weekly" && form.weeklyDays.length > 0) {
         recurrencePattern = { type: "weekly", days: form.weeklyDays };
       } else {
@@ -239,13 +275,12 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
       }
 
       if (!form.startsToday) {
-        const date = new Date();
-        if (form.recurrenceType === "daily") date.setDate(date.getDate() + 1);
-        else if (form.recurrenceType === "weekly") date.setDate(date.getDate() + 7);
-        else if (form.recurrenceType === "biweekly") date.setDate(date.getDate() + 14);
-        else if (form.recurrenceType === "monthly") date.setMonth(date.getMonth() + 1);
-        startDateString = date.toISOString();
+        startDateString = new Date(form.customDate).toISOString();
       }
+    } else {
+      // For one-time tasks, we use the customDate as the start date for generating the instance
+      startDateString = new Date(form.customDate).toISOString();
+      recurrencePattern = { type: "none" };
     }
 
     await editTemplate.mutateAsync({
@@ -319,6 +354,20 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
           </button>
         </div>
 
+        {/* Custom Due Date for One-time Task */}
+        {!form.isRepeating && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("due_date_label")}</label>
+            <input
+              type="date"
+              required
+              value={form.customDate}
+              onChange={(e) => setForm({ ...form, customDate: e.target.value })}
+              className="w-full bg-transparent text-lg font-bold text-white focus:outline-none [color-scheme:dark]"
+            />
+          </div>
+        )}
+
         {/* Recurrence Options (only visible when Repeating) */}
         {form.isRepeating && (
           <div className="space-y-4 animate-fade-in">
@@ -330,7 +379,10 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setForm({ ...form, recurrenceType: type })}
+                    onClick={() => {
+                      setForm({ ...form, recurrenceType: type });
+                      if (!form.startsToday) updateDefaultStartDate(type);
+                    }}
                     className={`px-2 py-2.5 rounded-xl text-xs font-semibold capitalize transition-all ${
                       form.recurrenceType === type
                         ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
@@ -371,7 +423,11 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
             {/* Starts Today toggle */}
             <button
               type="button"
-              onClick={() => setForm({ ...form, startsToday: !form.startsToday })}
+              onClick={() => {
+                const nextStartsToday = !form.startsToday;
+                setForm({ ...form, startsToday: nextStartsToday });
+                if (!nextStartsToday) updateDefaultStartDate(form.recurrenceType);
+              }}
               className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-4 transition-all hover:bg-white/[0.07]"
             >
               <div className="text-left">
@@ -388,6 +444,20 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
                 }`} />
               </div>
             </button>
+
+            {/* Custom Start Date for Recurring Task (if not startsToday) */}
+            {!form.startsToday && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
+                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("start_date_label")}</label>
+                <input
+                  type="date"
+                  required
+                  value={form.customDate}
+                  onChange={(e) => setForm({ ...form, customDate: e.target.value })}
+                  className="w-full bg-transparent text-lg font-bold text-white focus:outline-none [color-scheme:dark]"
+                />
+              </div>
+            )}
 
             {/* Spawn on Completion toggle */}
             <button
@@ -453,15 +523,53 @@ function CreateTaskDrawer({
     weeklyDays: [] as number[], // 0=Sun, 1=Mon, ..., 6=Sat
     spawnOnCompletion: false,
     startsToday: true,
+    customDate: new Date().toISOString().split('T')[0],
   });
 
+  const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+
+    if (recurrenceType === "daily") {
+      date.setDate(date.getDate() + 1);
+    } else if (recurrenceType === "weekly") {
+      if (weeklyDays.length > 0) {
+        let nextDate = new Date(date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        let found = false;
+        for (let i = 0; i < 7; i++) {
+          if (weeklyDays.includes(nextDate.getDay())) {
+            date.setTime(nextDate.getTime());
+            found = true;
+            break;
+          }
+          nextDate.setDate(nextDate.getDate() + 1);
+        }
+        if (!found) date.setDate(date.getDate() + 7);
+      } else {
+        date.setDate(date.getDate() + 7);
+      }
+    } else if (recurrenceType === "biweekly") {
+      date.setDate(date.getDate() + 14);
+    } else if (recurrenceType === "monthly") {
+      date.setMonth(date.getMonth() + 1);
+    }
+    setForm(prev => ({ ...prev, customDate: date.toISOString().split('T')[0] }));
+  };
+
   const toggleDay = (day: number) => {
+    const nextWeeklyDays = form.weeklyDays.includes(day)
+      ? form.weeklyDays.filter((d) => d !== day)
+      : [...form.weeklyDays, day].sort();
+
     setForm((prev) => ({
       ...prev,
-      weeklyDays: prev.weeklyDays.includes(day)
-        ? prev.weeklyDays.filter((d) => d !== day)
-        : [...prev.weeklyDays, day].sort(),
+      weeklyDays: nextWeeklyDays,
     }));
+
+    if (!form.startsToday && form.recurrenceType === "weekly") {
+      updateDefaultStartDate("weekly", nextWeeklyDays);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -470,9 +578,7 @@ function CreateTaskDrawer({
     let recurrencePattern: { type: string; days?: number[] };
     let startDateString: string | undefined = undefined;
 
-    if (!form.isRepeating) {
-      recurrencePattern = { type: "none" };
-    } else {
+    if (form.isRepeating) {
       if (form.recurrenceType === "weekly" && form.weeklyDays.length > 0) {
         recurrencePattern = { type: "weekly", days: form.weeklyDays };
       } else {
@@ -480,13 +586,12 @@ function CreateTaskDrawer({
       }
 
       if (!form.startsToday) {
-        const date = new Date();
-        if (form.recurrenceType === "daily") date.setDate(date.getDate() + 1);
-        else if (form.recurrenceType === "weekly") date.setDate(date.getDate() + 7);
-        else if (form.recurrenceType === "biweekly") date.setDate(date.getDate() + 14);
-        else if (form.recurrenceType === "monthly") date.setMonth(date.getMonth() + 1);
-        startDateString = date.toISOString();
+        startDateString = new Date(form.customDate).toISOString();
       }
+    } else {
+      // For one-time tasks, we use the customDate as the start date for generating the instance
+      startDateString = new Date(form.customDate).toISOString();
+      recurrencePattern = { type: "none" };
     }
 
     await createTemplate.mutateAsync({
@@ -561,6 +666,20 @@ function CreateTaskDrawer({
           </button>
         </div>
 
+        {/* Custom Due Date for One-time Task */}
+        {!form.isRepeating && (
+          <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
+            <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("due_date_label")}</label>
+            <input
+              type="date"
+              required
+              value={form.customDate}
+              onChange={(e) => setForm({ ...form, customDate: e.target.value })}
+              className="w-full bg-transparent text-lg font-bold text-white focus:outline-none [color-scheme:dark]"
+            />
+          </div>
+        )}
+
         {/* Recurrence Options (only visible when Repeating) */}
         {form.isRepeating && (
           <div className="space-y-4 animate-fade-in">
@@ -572,7 +691,10 @@ function CreateTaskDrawer({
                   <button
                     key={type}
                     type="button"
-                    onClick={() => setForm({ ...form, recurrenceType: type })}
+                    onClick={() => {
+                      setForm({ ...form, recurrenceType: type });
+                      if (!form.startsToday) updateDefaultStartDate(type);
+                    }}
                     className={`px-2 py-2.5 rounded-xl text-xs font-semibold capitalize transition-all ${
                       form.recurrenceType === type
                         ? "bg-brand-500 text-white shadow-lg shadow-brand-500/20"
@@ -613,7 +735,11 @@ function CreateTaskDrawer({
             {/* Starts Today toggle */}
             <button
               type="button"
-              onClick={() => setForm({ ...form, startsToday: !form.startsToday })}
+              onClick={() => {
+                const nextStartsToday = !form.startsToday;
+                setForm({ ...form, startsToday: nextStartsToday });
+                if (!nextStartsToday) updateDefaultStartDate(form.recurrenceType);
+              }}
               className="w-full flex items-center justify-between bg-white/5 border border-white/10 rounded-2xl px-4 py-4 transition-all hover:bg-white/[0.07]"
             >
               <div className="text-left">
@@ -630,6 +756,20 @@ function CreateTaskDrawer({
                 }`} />
               </div>
             </button>
+
+            {/* Custom Start Date for Recurring Task (if not startsToday) */}
+            {!form.startsToday && (
+              <div className="bg-white/5 border border-white/10 rounded-2xl p-4 animate-fade-in">
+                <label className="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">{t("start_date_label")}</label>
+                <input
+                  type="date"
+                  required
+                  value={form.customDate}
+                  onChange={(e) => setForm({ ...form, customDate: e.target.value })}
+                  className="w-full bg-transparent text-lg font-bold text-white focus:outline-none [color-scheme:dark]"
+                />
+              </div>
+            )}
 
             {/* Spawn on Completion toggle */}
             <button
