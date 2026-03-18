@@ -133,7 +133,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
               onChange={(e) => setForm({ ...form, cooldownDays: parseInt(e.target.value) || 0 })}
               className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
             />
-            <span className="text-sm font-medium text-slate-500">{t("day")}</span>
+            <span className="text-sm font-medium text-slate-500">{form.cooldownDays === 1 ? t("day") : t("days")}</span>
           </div>
           <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
             {t("cooldown_description")}

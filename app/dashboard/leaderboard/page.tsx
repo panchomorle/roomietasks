@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                 .replace("${amount}", `$${contribution.toFixed(2)}`)}
             </p>
             <p className="text-[10px] text-brand-300/50 uppercase tracking-widest font-semibold">
-              {room?.period_duration_days} {t("period_days")}
+              {room?.period_duration_days} {room?.period_duration_days === 1 ? t("period_day") : t("period_days")}
             </p>
             {timeLeftStr && (
               <div className="mt-4 inline-block bg-white/10 px-4 py-1.5 rounded-full border border-brand-500/30">

@@ -209,7 +209,9 @@ function JoinRoomDrawer({ userId, onClose }: { userId: string; onClose: () => vo
             <div className="flex flex-col items-center justify-center gap-1 mt-4">
               <span className="text-xs uppercase tracking-widest text-brand-300 font-semibold">{t("pool_contribution")}</span>
               <span className="text-3xl font-bold text-white">${roomInfo.contribution_per_member}</span>
-              <span className="text-xs text-slate-400">{t("every_x_days").replace("{days}", roomInfo.period_duration_days)}</span>
+              <span className="text-xs text-slate-400">
+                {roomInfo.period_duration_days === 1 ? t("every_day") : t("every_x_days").replace("{days}", String(roomInfo.period_duration_days))}
+              </span>
             </div>
           </div>
           
@@ -318,7 +320,7 @@ function RoomCard({
             )}
           </div>
           <p className="text-xs text-slate-500 font-medium">
-            {membership.role === "admin" ? t("admin") : t("member")} · ${room?.contribution_per_member}/period · {room?.period_duration_days} {t("day")}
+            {membership.role === "admin" ? t("admin") : t("member")} · ${room?.contribution_per_member}{t("per_period")} · {room?.period_duration_days} {room?.period_duration_days === 1 ? t("day") : t("days")}
           </p>
           {room?.point_limit ? (
             <p className="text-[10px] text-brand-400/80 font-bold uppercase tracking-wider mt-1.5 flex items-center gap-1.5">
@@ -335,7 +337,7 @@ function RoomCard({
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              {t("cooldown")}: {room.recurrent_cooldown_days} {t("day")}
+              {t("cooldown")}: {room.recurrent_cooldown_days} {room.recurrent_cooldown_days === 1 ? t("day") : t("days")}
             </p>
           )}
         </div>

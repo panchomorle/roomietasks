@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePreviewRoom, useJoinRoom } from "@/hooks/mutations/useTaskMutations";
 import { useAtom } from "jotai";
 import { currentRoomIdAtom } from "@/store/atoms";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function InvitePage() {
   const params = useParams();
@@ -14,6 +15,7 @@ export default function InvitePage() {
   const previewRoom = usePreviewRoom();
   const joinRoom = useJoinRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
+  const { t } = useTranslation();
   
   const [errorMsg, setErrorMsg] = useState("");
   const [roomInfo, setRoomInfo] = useState<any>(null);
@@ -93,9 +95,13 @@ export default function InvitePage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/10 rounded-full blur-3xl" />
               <h3 className="text-3xl font-black text-white tracking-tight mb-2 relative z-10">{roomInfo.name}</h3>
               <div className="flex flex-col items-center justify-center mt-4 relative z-10">
-                <span className="text-[10px] uppercase tracking-widest text-brand-300 font-bold mb-1">Room Contribution</span>
+                <span className="text-[10px] uppercase tracking-widest text-brand-300 font-bold mb-1">{t("pool_contribution")}</span>
                 <span className="text-4xl font-black text-white">${roomInfo.contribution_per_member}</span>
-                <span className="text-xs text-brand-300/70 font-medium mt-1">every {roomInfo.period_duration_days} days</span>
+                <span className="text-xs text-brand-300/70 font-medium mt-1">
+                  {roomInfo.period_duration_days === 1 
+                    ? t("every_day") 
+                    : t("every_x_days").replace("{days}", String(roomInfo.period_duration_days))}
+                </span>
               </div>
             </div>
 
@@ -104,7 +110,7 @@ export default function InvitePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
               <p className="text-xs text-slate-300 leading-relaxed font-medium">
-                By joining this room, you agree to the regular contribution amount set by the admin.
+                {t("agree_contribution")}
               </p>
             </div>
 
@@ -113,13 +119,13 @@ export default function InvitePage() {
               disabled={joinRoom.isPending}
               className="w-full py-4 bg-brand-600 hover:bg-brand-500 active:bg-brand-700 text-white rounded-2xl font-bold text-lg transition-colors shadow-[0_0_20px_rgba(99,102,241,0.3)] disabled:opacity-50"
             >
-              {joinRoom.isPending ? "Joining..." : "Join & Accept"}
+              {joinRoom.isPending ? t("joining") : t("join_accept")}
             </button>
             <button
               onClick={() => router.push("/dashboard")}
               className="w-full py-3 mt-3 text-slate-400 hover:text-white font-semibold transition-colors text-sm"
             >
-              Cancel
+              {t("cancel")}
             </button>
           </div>
         )}
