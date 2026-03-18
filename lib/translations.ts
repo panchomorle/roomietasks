@@ -24,6 +24,13 @@ export const translations = {
     saving: "Saving...",
     deleting: "Deleting...",
     delete: "Delete",
+    order_by: "Order by",
+    due_date_asc: "Due Date: Soonest",
+    due_date_desc: "Due Date: Furthest",
+    points_desc: "Points: High to Low",
+    points_asc: "Points: Low to High",
+    title_asc: "Title: A to Z",
+    created_at_desc: "Recently added",
 
     // Board Page
     leaderboard: "Leaderboard",
@@ -209,6 +216,13 @@ export const translations = {
     saving: "Guardando...",
     deleting: "Eliminando...",
     delete: "Eliminar",
+    order_by: "Ordenar por",
+    due_date_asc: "Fecha: Más próximas",
+    due_date_desc: "Fecha: Más lejanas",
+    points_desc: "Puntos: Mayor a menor",
+    points_asc: "Puntos: Menor a mayor",
+    title_asc: "Título: A a la Z",
+    created_at_desc: "Agregadas recientemente",
 
     // Board Page
     leaderboard: "Clasificación",

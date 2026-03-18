@@ -2,29 +2,45 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { TaskFilter } from "@/store/atoms";
+import type { TaskFilter, TaskSort } from "@/store/atoms";
 
 export function useTaskInstances(
   roomId: string | null,
   filter: TaskFilter,
+  sort: TaskSort,
   userId: string | undefined
 ) {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: ["task-instances", roomId, filter, userId],
+    queryKey: ["task-instances", roomId, filter, sort, userId],
     queryFn: async () => {
       let query = supabase
         .from("task_instances")
         .select("*, profiles!task_instances_assigned_user_id_profiles_fkey(full_name, avatar_url), completer:profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url), template:task_templates(*)")
         .eq("room_id", roomId!)
-        .eq("status", "pending")
-        .order("due_date", { ascending: true });
+        .eq("status", "pending");
 
+      // Apply Filter
       if (filter === "unassigned") {
         query = query.is("assigned_user_id", null);
       } else if (filter === "mine") {
         query = query.eq("assigned_user_id", userId!);
+      }
+
+      // Apply Sort
+      if (sort === "due_date_asc") {
+        query = query.order("due_date", { ascending: true });
+      } else if (sort === "due_date_desc") {
+        query = query.order("due_date", { ascending: false });
+      } else if (sort === "points_desc") {
+        query = query.order("points_reward", { ascending: false });
+      } else if (sort === "points_asc") {
+        query = query.order("points_reward", { ascending: true });
+      } else if (sort === "title_asc") {
+        query = query.order("title", { ascending: true });
+      } else if (sort === "created_at_desc") {
+        query = query.order("created_at", { ascending: false });
       }
 
       const { data, error } = await query;

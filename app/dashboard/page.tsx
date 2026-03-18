@@ -1,7 +1,7 @@
 "use client";
 
 import { useAtom, useAtomValue } from "jotai";
-import { currentRoomIdAtom, taskFilterAtom, type TaskFilter } from "@/store/atoms";
+import { currentRoomIdAtom, taskFilterAtom, taskSortAtom, type TaskFilter, type TaskSort } from "@/store/atoms";
 import { useAuth } from "@/hooks/useAuth";
 import { useTaskInstances } from "@/hooks/queries/useTasks";
 import { useRoom, useRoomMembers } from "@/hooks/queries/useRooms";
@@ -818,11 +818,13 @@ export default function TasksPage() {
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [filter, setFilter] = useAtom(taskFilterAtom);
+  const [sort, setSort] = useAtom(taskSortAtom);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const { data: room, isLoading: roomLoading } = useRoom(roomId);
   const { data: members } = useRoomMembers(roomId);
-  const { data: tasks, isLoading: tasksLoading } = useTaskInstances(roomId, filter, user?.id);
+  const { data: tasks, isLoading: tasksLoading } = useTaskInstances(roomId, filter, sort, user?.id);
 
   const currentUserRole = members?.find((m: any) => m.user_id === user?.id)?.role;
 
@@ -830,6 +832,15 @@ export default function TasksPage() {
     { label: t("all"), value: "all" },
     { label: t("unassigned"), value: "unassigned" },
     { label: t("mine"), value: "mine" },
+  ];
+  
+  const sortOptions: { label: string; value: TaskSort }[] = [
+    { label: t("due_date_asc"), value: "due_date_asc" },
+    { label: t("due_date_desc"), value: "due_date_desc" },
+    { label: t("points_desc"), value: "points_desc" },
+    { label: t("points_asc"), value: "points_asc" },
+    { label: t("title_asc"), value: "title_asc" },
+    { label: t("created_at_desc"), value: "created_at_desc" },
   ];
 
   if (!roomId && !roomLoading) {
@@ -857,21 +868,70 @@ export default function TasksPage() {
         <LanguageSwitcher />
       </div>
 
-      {/* Scrollable Filter Pills */}
-      <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 gap-2 hide-scrollbar">
-        {filters.map((f) => (
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1">
+          {filters.map((f) => (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm flex-shrink-0 ${
+                filter === f.value
+                  ? "bg-brand-600 text-white"
+                  : "bg-white/5 text-slate-400 hover:text-white border border-white/10"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        
+        <div className="relative ml-auto flex-shrink-0">
           <button
-            key={f.value}
-            onClick={() => setFilter(f.value)}
-            className={`whitespace-nowrap px-5 py-2.5 rounded-full text-sm font-semibold transition-all shadow-sm ${
-              filter === f.value
-                ? "bg-brand-600 text-white"
-                : "bg-white/5 text-slate-400 hover:text-white border border-white/10"
+            onClick={() => setShowSortMenu(!showSortMenu)}
+            className={`p-2.5 rounded-full border transition-all ${
+              showSortMenu 
+                ? "bg-brand-600/20 border-brand-500 text-brand-400" 
+                : "bg-white/5 border-white/10 text-slate-400 hover:text-white"
             }`}
           >
-            {f.label}
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-list-filter"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>
           </button>
-        ))}
+          
+          {showSortMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setShowSortMenu(false)} 
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-2xl shadow-2xl z-50 py-2 animate-fade-in">
+                <div className="px-4 py-2 border-b border-white/5 mb-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t("order_by")}</p>
+                </div>
+                {sortOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => {
+                      setSort(option.value);
+                      setShowSortMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                      sort === option.value 
+                        ? "text-brand-400 bg-brand-500/10 font-medium" 
+                        : "text-slate-300 hover:text-white hover:bg-white/5"
+                    }`}
+                  >
+                    {option.label}
+                    {sort === option.value && (
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Task List */}
