@@ -36,6 +36,9 @@
   - `complete_task_instance`: Validates and marks tasks as completed.
   - `end_period`: Finalizes the current season, distributes data into history tables, and resets the board.
 
+> [!IMPORTANT]
+> **Point Type Precision**: Always use `numeric` (PostgreSQL) or `number` (TypeScript) for point calculations. Avoid `integer` variables in RPCs, as they will round fractional rewards (like 0.5) to the nearest whole number.
+
 ## File Structure Organization
 - `/app`: Next.js App Router pages and layouts (`/dashboard`, `/room`, etc.).
 - `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`, modals).

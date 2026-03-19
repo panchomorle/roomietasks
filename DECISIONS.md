@@ -33,3 +33,10 @@ This document tracks significant design choices made during the development of R
 **Reasoning**: 
 - Elevates the visual quality to a premium aesthetic (glassmorphism/Tailwind components).
 - Allows the injection of detailed context before a permanent action (e.g., showing exact point breakdowns and tasks completed before ending the season).
+
+## 6. Fractional Points Support
+**Decision**: Switched from implicit integer point handling in Supabase RPCs to explicit `numeric` types for all point-related calculations.
+**Reasoning**: 
+- Users requested the ability to assign rewards like `0.5` points.
+- Previous `integer` variable declarations in PL/pgSQL caused automatic rounding (e.g., `0.5` became `1`), leading to leaderboard inaccuracies.
+- Using `numeric` throughout the database layer (RPC variables and table columns) ensures perfect precision for any decimal point value.

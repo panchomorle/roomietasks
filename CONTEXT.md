@@ -11,7 +11,7 @@
 5. **The Pot & Leaderboard**: Members contribute to a prize pool ("The Pot"). At the end of the period, members are ranked on a leaderboard based on points earned. The pot is distributed proportionally or definitively to the top performers, depending on room settings.
 
 ## Key Terminology
-- **Task Template**: The definition of a chore (e.g., "Clean the kitchen"). Stores recurrence data, point rewards, etc.
+- **Task Template**: The definition of a chore (e.g., "Clean the kitchen"). Stores recurrence data, point rewards (including fractional values like 0.5), etc.
 - **Task Instance**: A specific occurrence of a chore that needs to be done *today* or by a certain *due date*.
 - **Season / Period**: The active timeframe in which points are accumulated.
 - **Podium**: The top 3 users at the end of a season.
