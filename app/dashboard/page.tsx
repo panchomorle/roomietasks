@@ -15,8 +15,10 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatTaskDate, computeCycleCutoff } from "@/lib/dateUtils";
 import { formatPoints } from "@/lib/numberUtils";
 
+import { getPointColorClasses } from "@/lib/pointsColor";
+
 // ─── Task Card ───────────────────────────────────────────────
-function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmin: boolean }) {
+function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: string; isAdmin: boolean; pointLimit: number | null }) {
   const { t, language } = useTranslation();
   const claimTask = useClaimTask();
   const unclaimTask = useUnclaimTask();
@@ -79,7 +81,7 @@ function TaskCard({ task, userId, isAdmin }: { task: any; userId: string; isAdmi
               <p className="text-slate-400 text-xs sm:text-sm mt-1 line-clamp-2">{task.description}</p>
             )}
             <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className="inline-flex items-center gap-1.25 px-2 py-1 bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-bold uppercase tracking-wider rounded-md">
+              <span className={`inline-flex items-center gap-1.25 px-2 py-1 ${getPointColorClasses(task.points_reward, pointLimit).bg} border ${getPointColorClasses(task.points_reward, pointLimit).border} ${getPointColorClasses(task.points_reward, pointLimit).text} text-[11px] font-bold uppercase tracking-wider rounded-md`}>
                 {formatPoints(task.points_reward, language as "en" | "es")} pts
               </span>
               <span className={`text-xs flex items-center gap-1 ${isExpired ? "text-red-500 font-semibold" : "text-slate-500"}`}>
@@ -1035,14 +1037,14 @@ export default function TasksPage() {
         ) : (currentCycleTasks.length > 0 || nextCycleTasks.length > 0) ? (
           <>
             {currentCycleTasks.map((task) => (
-              <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} />
+              <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} pointLimit={room?.point_limit ?? null} />
             ))}
             
             {nextCycleTasks.length > 0 && (
               <>
                 <CycleDivider label={t("next_cycle")} />
                 {nextCycleTasks.map((task) => (
-                  <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} />
+                  <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} pointLimit={room?.point_limit ?? null} />
                 ))}
               </>
             )}

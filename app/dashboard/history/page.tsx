@@ -3,6 +3,7 @@
 import { useAtomValue } from "jotai";
 import { currentRoomIdAtom } from "@/store/atoms";
 import { useCompletedTasks } from "@/hooks/queries/useTasks";
+import { useRoom } from "@/hooks/queries/useRooms";
 import { useUncompleteTask } from "@/hooks/mutations/useTaskMutations";
 import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
@@ -10,6 +11,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatPoints } from "@/lib/numberUtils";
 import { formatTaskDate } from "@/lib/dateUtils";
+import { getPointColorClasses } from "@/lib/pointsColor";
 
 export default function HistoryPage() {
   const { t, language } = useTranslation();
@@ -17,6 +19,7 @@ export default function HistoryPage() {
   const roomId = useAtomValue(currentRoomIdAtom);
   const [loadCount, setLoadCount] = useState(20);
   const { data: tasks, isLoading } = useCompletedTasks(roomId, loadCount);
+  const { data: room } = useRoom(roomId);
   const uncompleteTask = useUncompleteTask();
 
   if (!roomId) {
@@ -61,7 +64,7 @@ export default function HistoryPage() {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-white font-medium text-[15px] sm:text-base line-through opacity-60 leading-tight">{task.title}</h3>
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[11px] sm:text-xs text-slate-500 font-medium tracking-wide">
-                      <span className="text-brand-400">{formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}</span>
+                      <span className={`${getPointColorClasses(task.points_reward, room?.point_limit ?? null).text}`}>{formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}</span>
                       <span>•</span>
                       <span>
                         {t("by")}{" "}
