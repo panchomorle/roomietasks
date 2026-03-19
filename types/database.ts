@@ -159,6 +159,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           current_period_start_date: string
+          cycles_per_period: number
           id: string
           invite_code: string
           name: string
@@ -172,6 +173,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_period_start_date?: string
+          cycles_per_period?: number
           id?: string
           invite_code?: string
           name: string
@@ -185,6 +187,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_period_start_date?: string
+          cycles_per_period?: number
           id?: string
           invite_code?: string
           name?: string

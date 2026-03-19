@@ -12,7 +12,7 @@ import { PointLimitModal } from "@/components/PointLimitModal";
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { formatTaskDate } from "@/lib/dateUtils";
+import { formatTaskDate, computeCycleCutoff } from "@/lib/dateUtils";
 import { formatPoints } from "@/lib/numberUtils";
 
 // ─── Task Card ───────────────────────────────────────────────
@@ -843,6 +843,38 @@ function CreateTaskDrawer({
   );
 }
 
+function CycleDivider({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 my-4 animate-fade-in">
+      <div className="flex-1 h-px bg-white/10" />
+      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 bg-white/5 px-3 py-1 rounded-full border border-white/5">
+        {label}
+      </span>
+      <div className="flex-1 h-px bg-white/10" />
+    </div>
+  );
+}
+
+function sortTasks(tasks: any[], sort: TaskSort): any[] {
+  const arr = [...tasks];
+  switch (sort) {
+    case "due_date_asc":
+      return arr.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
+    case "due_date_desc":
+      return arr.sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
+    case "points_desc":
+      return arr.sort((a, b) => b.points_reward - a.points_reward);
+    case "points_asc":
+      return arr.sort((a, b) => a.points_reward - b.points_reward);
+    case "title_asc":
+      return arr.sort((a, b) => a.title.localeCompare(b.title));
+    case "created_at_desc":
+      return arr.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    default:
+      return arr;
+  }
+}
+
 // ─── Main Tasks Page ─────────────────────────────────────────
 export default function TasksPage() {
   const { t } = useTranslation();
@@ -855,9 +887,40 @@ export default function TasksPage() {
 
   const { data: room, isLoading: roomLoading } = useRoom(roomId);
   const { data: members } = useRoomMembers(roomId);
-  const { data: tasks, isLoading: tasksLoading } = useTaskInstances(roomId, filter, sort, user?.id);
+  const { data: allTasks, isLoading: tasksLoading } = useTaskInstances(roomId, filter, sort, user?.id);
 
   const currentUserRole = members?.find((m: any) => m.user_id === user?.id)?.role;
+
+  // Split and sort tasks
+  const { currentCycleTasks, nextCycleTasks } = (() => {
+    if (!allTasks) return { currentCycleTasks: [], nextCycleTasks: [] };
+    
+    if (!room || !room.current_period_start_date) {
+        return { currentCycleTasks: sortTasks(allTasks, sort), nextCycleTasks: [] };
+    }
+
+    const cutoff = computeCycleCutoff(
+      room.current_period_start_date,
+      room.period_duration_days,
+      room.cycles_per_period || 1
+    );
+
+    const current: any[] = [];
+    const next: any[] = [];
+
+    allTasks.forEach(t => {
+      if (new Date(t.due_date) <= cutoff) {
+        current.push(t);
+      } else {
+        next.push(t);
+      }
+    });
+
+    return {
+      currentCycleTasks: sortTasks(current, sort),
+      nextCycleTasks: sortTasks(next, sort)
+    };
+  })();
 
   const filters: { label: string; value: TaskFilter }[] = [
     { label: t("all"), value: "all" },
@@ -969,8 +1032,21 @@ export default function TasksPage() {
       <div className="space-y-3 sm:space-y-4 pb-20">
         {tasksLoading ? (
           [1, 2, 3, 4].map((i) => <div key={i} className="h-28 bg-white/[0.03] border border-white/[0.06] rounded-2xl animate-pulse" />)
-        ) : tasks && tasks.length > 0 ? (
-          tasks.map((task) => <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} />)
+        ) : (currentCycleTasks.length > 0 || nextCycleTasks.length > 0) ? (
+          <>
+            {currentCycleTasks.map((task) => (
+              <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} />
+            ))}
+            
+            {nextCycleTasks.length > 0 && (
+              <>
+                <CycleDivider label={t("next_cycle")} />
+                {nextCycleTasks.map((task) => (
+                  <TaskCard key={task.id} task={task} userId={user?.id ?? ""} isAdmin={currentUserRole === "admin"} />
+                ))}
+              </>
+            )}
+          </>
         ) : (
           <div className="text-center py-16 bg-white/[0.02] border border-white/5 rounded-3xl mt-4">
             <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">

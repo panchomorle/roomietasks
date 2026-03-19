@@ -109,6 +109,10 @@ export const translations = {
     recurrent_cooldown: "Recurrent Task Cooldown",
     cooldown_description: "Time a member must wait after completing a task before claiming it again. Set to 0 to disable.",
     save_settings: "Save Settings",
+    cycles_per_period: "Cycles per Period",
+    cycles_per_period_description: "Splits the period into equal cycles. Set to 1 to disable. E.g. 4 cycles in a 28-day period = 7-day cycles.",
+    next_cycle: "Next cycles",
+    this_cycle: "This Cycle",
 
     // Language switcher
     language: "Language",
@@ -307,6 +311,10 @@ export const translations = {
     recurrent_cooldown: "Espera de Tarea Recurrente",
     cooldown_description: "Tiempo que un miembro debe esperar después de completar una tarea antes de reclamarla de nuevo. Pon 0 para desactivar.",
     save_settings: "Guardar Ajustes",
+    cycles_per_period: "Ciclos por Período",
+    cycles_per_period_description: "Divide el período en ciclos iguales. Set to 1 para desactivar. Ej: 4 ciclos en 28 días = ciclos de 7 días.",
+    next_cycle: "Próximos ciclos",
+    this_cycle: "Este Ciclo",
 
     // Language switcher
     language: "Idioma",

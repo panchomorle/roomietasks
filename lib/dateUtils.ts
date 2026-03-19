@@ -37,3 +37,15 @@ export function formatTaskDate(dateValue: string | Date, language: 'en' | 'es'):
   // EEEE outputs "Tuesday", "lunes", etc.
   return format(dateMidnight, 'EEEE', { locale });
 }
+
+/** Returns the UTC midnight Date that marks the end of the current cycle. */
+export function computeCycleCutoff(
+  periodStartIso: string,
+  periodDurationDays: number,
+  cyclesPerPeriod: number
+): Date {
+  const cycleDays = periodDurationDays / (cyclesPerPeriod || 1);
+  const start = new Date(periodStartIso);
+  const cutoff = new Date(start.getTime() + cycleDays * 24 * 60 * 60 * 1000);
+  return cutoff;
+}

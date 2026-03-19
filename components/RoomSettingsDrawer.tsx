@@ -16,10 +16,11 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
   const [form, setForm] = useState({
     name: room.name,
     contribution: room.contribution_per_member,
-    periodDays: room.period_duration_days,
+    periodDays: String(room.period_duration_days || 30),
     pointLimit: room.point_limit != null ? String(room.point_limit) : "0",
     pointLimitPeriod: (room.point_limit_period as "day" | "week" | "month") || "week",
     cooldownDays: room.recurrent_cooldown_days || 0,
+    cyclesPerPeriod: String(room.cycles_per_period || 1),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -29,10 +30,11 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
       updates: {
         name: form.name,
         contribution_per_member: form.contribution,
-        period_duration_days: form.periodDays,
+        period_duration_days: parseInt(form.periodDays) || 30,
         point_limit: (parseFloat(form.pointLimit as string) || 0) > 0 ? parseFloat(form.pointLimit as string) : null,
         point_limit_period: (parseFloat(form.pointLimit as string) || 0) > 0 ? form.pointLimitPeriod : null,
         recurrent_cooldown_days: form.cooldownDays,
+        cycles_per_period: parseInt(form.cyclesPerPeriod) || 1,
       } as any,
     });
     onClose();
@@ -74,7 +76,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
               min={1}
               required
               value={form.periodDays}
-              onChange={(e) => setForm({ ...form, periodDays: parseInt(e.target.value) })}
+              onChange={(e) => setForm({ ...form, periodDays: e.target.value })}
               className="w-full bg-transparent text-xl font-bold text-white focus:outline-none"
             />
           </div>
@@ -137,6 +139,24 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
           </div>
           <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
             {t("cooldown_description")}
+          </p>
+        </div>
+
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">{t("cycles_per_period")}</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="number"
+              min={1}
+              max={30}
+              value={form.cyclesPerPeriod}
+              onChange={(e) => setForm({ ...form, cyclesPerPeriod: e.target.value })}
+              className="flex-1 bg-transparent text-xl font-bold text-white focus:outline-none"
+            />
+            <span className="text-sm font-medium text-slate-500">{t("days")}</span>
+          </div>
+          <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+            {t("cycles_per_period_description")}
           </p>
         </div>
 
