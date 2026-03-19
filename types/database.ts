@@ -323,7 +323,7 @@ export type Database = {
         Returns: Json
       }
       complete_task_instance: {
-        Args: { p_task_id: string; p_user_id: string }
+        Args: { p_force?: boolean; p_task_id: string; p_user_id: string }
         Returns: Json
       }
       end_period: { Args: { p_room_id: string }; Returns: string }

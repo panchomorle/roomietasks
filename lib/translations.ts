@@ -65,8 +65,8 @@ export const translations = {
     point_warning: "Point Warning",
     cooldown_active: "Cooldown Active",
     too_early: "Way Too Early!",
-    point_limit_desc: "You've already earned {current} points this {period}. Completing this would exceed your {limit}pt limit.",
-    claim_warning_desc: "Claiming this task ({pending}pt) might push you over your {limit}pt {period}ly limit.",
+    point_limit_desc: "Completing this task will only yield {partial} points to not exceed your {limit}pt {period} limit.",
+    claim_warning_desc: "Claiming this task ({pending}pt) will only yield {partial} points to not exceed your {limit}pt {period}ly limit.",
     current_status: "Current status: {earned} earned + {assigned} already claimed.",
     cooldown_desc: "You completed this recurrent task recently. To keep things fair, you must wait {days}d {hours}h before claiming it again.",
     too_early_desc: "This task is due on {date}. You must wait a bit longer to complete it.",
@@ -77,6 +77,8 @@ export const translations = {
     dropping: "Dropping...",
     cancel: "Cancel",
     claim_anyway: "Claim Anyway",
+    complete_anyway: "Complete Anyway",
+    completing: "Completing...",
 
     // Rooms Page
     your_rooms: "Your Rooms",
@@ -261,8 +263,8 @@ export const translations = {
     point_warning: "Aviso de Puntos",
     cooldown_active: "Espera Activa",
     too_early: "¡Muy pronto!",
-    point_limit_desc: "Ya has ganado {current} puntos este {period}. Completar esto superaría tu límite de {limit}pt.",
-    claim_warning_desc: "Reclamar esta tarea ({pending}pt) podría pasarte de tu límite {period} de {limit}pt.",
+    point_limit_desc: "Completar esta tarea solo te dará {partial} puntos para no superar tu límite de {limit}pt por {period}.",
+    claim_warning_desc: "Reclamar esta tarea ({pending}pt) solo te dará {partial} puntos para no superar tu límite {period} de {limit}pt.",
     current_status: "Estado actual: {earned} ganados + {assigned} ya reclamados.",
     cooldown_desc: "Completaste esta tarea recurrente hace poco. Para que sea justo, debes esperar {days}d {hours}h antes de reclamarla de nuevo.",
     too_early_desc: "Esta tarea vence el {date}. Debes esperar un poco más para completarla.",
@@ -273,6 +275,8 @@ export const translations = {
     dropping: "Soltando...",
     cancel: "Cancelar",
     claim_anyway: "Reclamar de todos modos",
+    complete_anyway: "Completar de todos modos",
+    completing: "Completando...",
 
     // Rooms Page
     your_rooms: "Tus Salas",

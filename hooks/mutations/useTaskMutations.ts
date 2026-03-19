@@ -65,10 +65,11 @@ export function useCompleteTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ taskId, userId }: { taskId: string; userId: string }) => {
+    mutationFn: async ({ taskId, userId, force }: { taskId: string; userId: string; force?: boolean }) => {
       const { data, error } = await (supabase.rpc as any)("complete_task_instance", {
         p_task_id: taskId,
         p_user_id: userId,
+        p_force: force,
       });
 
       if (error) throw error;

@@ -1,7 +1,7 @@
 "use client";
 
 import { DraggableDrawer } from "./DraggableDrawer";
-import { useUnclaimTask, useClaimTask } from "@/hooks/mutations/useTaskMutations";
+import { useUnclaimTask, useClaimTask, useCompleteTask } from "@/hooks/mutations/useTaskMutations";
 import { useTranslation } from "@/hooks/useTranslation";
 import { translations } from "@/lib/translations";
 
@@ -25,6 +25,7 @@ export function PointLimitModal({
   const { t, language } = useTranslation();
   const unclaimTask = useUnclaimTask();
   const claimTask = useClaimTask();
+  const completeTask = useCompleteTask();
 
   if (!isOpen) return null;
 
@@ -42,6 +43,13 @@ export function PointLimitModal({
   const handleClaimAnyway = async () => {
     if (taskId && userId) {
       await claimTask.mutateAsync({ taskId, userId, force: true });
+    }
+    onClose();
+  };
+
+  const handleCompleteAnyway = async () => {
+    if (taskId && userId) {
+      await completeTask.mutateAsync({ taskId, userId, force: true });
     }
     onClose();
   };
@@ -73,14 +81,19 @@ export function PointLimitModal({
           {isPointLimit ? (
             <>
               {t("point_limit_desc")
-                .replace("{current}", details?.current || "0")
+                .replace("{partial}", details?.partial_points ?? "0")
                 .replace("{period}", t(details?.period || "period"))
                 .replace("{limit}", details?.limit || "0")}
+              <br/><br/>
+              {t("current_status")
+                .replace("{earned}", details?.current || "0")
+                .replace("{assigned}", "0")}
             </>
           ) : isClaimWarning ? (
             <>
               {t("claim_warning_desc")
                 .replace("{pending}", details?.pending_reward || "0")
+                .replace("{partial}", details?.partial_points ?? "0")
                 .replace("{limit}", details?.limit || "0")
                 .replace("{period}", t(details?.period || "")) }
               <br/><br/>
@@ -129,18 +142,31 @@ export function PointLimitModal({
                 {t("cancel")}
               </button>
             </>
+          ) : isPointLimit ? (
+            <>
+              <button
+                onClick={handleCompleteAnyway}
+                disabled={completeTask.isPending}
+                className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
+              >
+                {completeTask.isPending ? (t("completing") || "Completing...") : (t("complete_anyway") || "Complete Anyway")}
+              </button>
+              <button
+                onClick={handleGiveUp}
+                disabled={unclaimTask.isPending}
+                className="w-full py-4 bg-white/5 hover:bg-red-500/10 text-red-400 rounded-2xl font-bold text-lg transition-all border border-white/10 hover:border-red-500/20"
+              >
+                {unclaimTask.isPending ? t("dropping") : t("give_up_task")}
+              </button>
+              <button
+                onClick={onClose}
+                className="w-full py-4 bg-white/5 hover:bg-white/10 text-slate-400 rounded-2xl font-bold text-lg transition-all border border-white/10"
+              >
+                {t("cancel")}
+              </button>
+            </>
           ) : (
             <>
-              {isPointLimit && (
-                <button
-                  onClick={handleGiveUp}
-                  disabled={unclaimTask.isPending}
-                  className="w-full py-4 bg-white/5 hover:bg-red-500/10 text-red-400 rounded-2xl font-bold text-lg transition-all border border-white/10 hover:border-red-500/20"
-                >
-                  {unclaimTask.isPending ? t("dropping") : t("give_up_task")}
-                </button>
-              )}
-              
               <button
                 onClick={onClose}
                 className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
