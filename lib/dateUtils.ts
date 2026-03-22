@@ -98,3 +98,45 @@ export function computeCycleCutoff(
   
   return cutoff;
 }
+
+/** Returns the UTC midnight Date that marks the start of the current cycle. */
+export function computeCycleStart(
+  periodStartIso: string,
+  periodDurationDays: number,
+  cycleMode: 'count' | 'weekday' | 'fixed_days',
+  cyclesPerPeriod: number,
+  cycleAnchorWeekday?: number | null,
+  cycleFixedDays?: number | null
+): Date {
+  const cutoff = computeCycleCutoff(
+    periodStartIso,
+    periodDurationDays,
+    cycleMode,
+    cyclesPerPeriod,
+    cycleAnchorWeekday,
+    cycleFixedDays
+  );
+
+  const start = new Date(periodStartIso);
+  let cycleStart: Date;
+
+  if (cycleMode === 'count') {
+    const cycleDays = periodDurationDays / Math.max(cyclesPerPeriod || 1, 1);
+    cycleStart = new Date(cutoff.getTime() - cycleDays * 24 * 60 * 60 * 1000);
+  } else if (cycleMode === 'fixed_days') {
+    const cycleDays = Math.max(cycleFixedDays || 1, 1);
+    cycleStart = new Date(cutoff.getTime() - cycleDays * 24 * 60 * 60 * 1000);
+  } else if (cycleMode === 'weekday') {
+    // If it's a weekly anchor, the start is exactly 7 days before the cutoff
+    cycleStart = new Date(cutoff.getTime() - 7 * 24 * 60 * 60 * 1000);
+  } else {
+    cycleStart = start;
+  }
+
+  // Clamp to period start
+  if (cycleStart < start) {
+    return start;
+  }
+
+  return cycleStart;
+}

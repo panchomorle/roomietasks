@@ -127,3 +127,29 @@ export function useLeaderboard(roomId: string | null, periodStart: string | unde
     enabled: !!roomId && !!periodStart,
   });
 }
+
+export function useUserCyclePoints(
+  roomId: string | null,
+  userId: string | undefined,
+  cycleStart: Date | undefined
+) {
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ["user-cycle-points", roomId, userId, cycleStart?.toISOString()],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("task_instances")
+        .select("points_reward")
+        .eq("room_id", roomId!)
+        .eq("status", "completed")
+        .eq("completed_by_user_id", userId!)
+        .gte("completed_at", cycleStart!.toISOString());
+
+      if (error) throw error;
+
+      return data.reduce((sum, task) => sum + task.points_reward, 0);
+    },
+    enabled: !!roomId && !!userId && !!cycleStart,
+  });
+}

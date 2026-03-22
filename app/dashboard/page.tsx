@@ -12,9 +12,10 @@ import { PointLimitModal } from "@/components/PointLimitModal";
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { formatTaskDate, computeCycleCutoff } from "@/lib/dateUtils";
+import { formatTaskDate, computeCycleCutoff, computeCycleStart } from "@/lib/dateUtils";
 import { formatPoints } from "@/lib/numberUtils";
 import { useCycleCountdown } from "@/hooks/useCycleCountdown";
+import { useUserCyclePoints } from "@/hooks/queries/useTasks";
 
 import { getPointColorClasses } from "@/lib/pointsColor";
 
@@ -880,7 +881,7 @@ function sortTasks(tasks: any[], sort: TaskSort): any[] {
 
 // ─── Main Tasks Page ─────────────────────────────────────────
 export default function TasksPage() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [filter, setFilter] = useAtom(taskFilterAtom);
@@ -959,6 +960,21 @@ export default function TasksPage() {
     );
   }
 
+  const cycleStart = room ? computeCycleStart(
+    room.current_period_start_date,
+    room.period_duration_days,
+    room.cycle_mode as any,
+    room.cycles_per_period,
+    room.cycle_anchor_weekday,
+    room.cycle_fixed_days
+  ) : undefined;
+
+  const { data: userPoints = 0 } = useUserCyclePoints(
+    roomId,
+    user?.id,
+    cycleStart
+  );
+
   return (
     <>
       {/* Header */}
@@ -971,12 +987,19 @@ export default function TasksPage() {
       </div>
 
       {cycleCountdown.isActive && (
-        <p className="text-xs text-slate-500 mb-4 -mt-4">
-          {cycleCountdown.isEnded
-            ? t("cycle_ended")
-            : `${t("cycle_ends_in")} ${cycleCountdown.days > 0 ? `${cycleCountdown.days}d ` : ""}${String(cycleCountdown.hours).padStart(2, "0")}:${String(cycleCountdown.minutes).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}`
-          }
-        </p>
+        <div className="flex items-center justify-between text-xs text-slate-500 mb-4 -mt-4 font-medium">
+          <p>
+            {cycleCountdown.isEnded
+              ? t("cycle_ended")
+              : `${t("cycle_ends_in")} ${cycleCountdown.days > 0 ? `${cycleCountdown.days}d ` : ""}${String(cycleCountdown.hours).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}`
+            }
+          </p>
+          {room?.point_limit && (
+            <p>
+              {t("my_points")}: <span className="text-slate-300 font-bold">{formatPoints(userPoints, language as any)}/{formatPoints(room.point_limit, language as any)}</span>
+            </p>
+          )}
+        </div>
       )}
 
 
