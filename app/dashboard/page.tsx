@@ -991,7 +991,7 @@ export default function TasksPage() {
           <p>
             {cycleCountdown.isEnded
               ? t("cycle_ended")
-              : `${t("cycle_ends_in")} ${cycleCountdown.days > 0 ? `${cycleCountdown.days}d ` : ""}${String(cycleCountdown.hours).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}`
+              : `${t("cycle_ends_in")} ${cycleCountdown.days > 0 ? `${cycleCountdown.days}d ` : ""}${String(cycleCountdown.hours).padStart(2, "0")}:${String(cycleCountdown.minutes).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}`
             }
           </p>
           {room?.point_limit && (
