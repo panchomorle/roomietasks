@@ -42,10 +42,59 @@ export function formatTaskDate(dateValue: string | Date, language: 'en' | 'es'):
 export function computeCycleCutoff(
   periodStartIso: string,
   periodDurationDays: number,
-  cyclesPerPeriod: number
+  cycleMode: 'count' | 'weekday' | 'fixed_days',
+  cyclesPerPeriod: number,
+  cycleAnchorWeekday?: number | null,
+  cycleFixedDays?: number | null
 ): Date {
-  const cycleDays = periodDurationDays / (cyclesPerPeriod || 1);
   const start = new Date(periodStartIso);
-  const cutoff = new Date(start.getTime() + cycleDays * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const periodEnd = new Date(start.getTime() + periodDurationDays * 24 * 60 * 60 * 1000);
+
+  let cutoff: Date;
+
+  if (cycleMode === 'count') {
+    const cycleDays = periodDurationDays / Math.max(cyclesPerPeriod || 1, 1);
+    const startMs = start.getTime();
+    const nowMs = now.getTime();
+    
+    // Find how many cycles have passed
+    // If now is before start, passedCycles will be negative
+    const passedCycles = Math.floor((Math.max(nowMs, startMs) - startMs) / (cycleDays * 24 * 60 * 60 * 1000));
+    cutoff = new Date(startMs + (passedCycles + 1) * cycleDays * 24 * 60 * 60 * 1000);
+  } else if (cycleMode === 'fixed_days') {
+    const cycleDays = Math.max(cycleFixedDays || 1, 1);
+    const startMs = start.getTime();
+    const nowMs = now.getTime();
+    
+    const passedCycles = Math.floor((Math.max(nowMs, startMs) - startMs) / (cycleDays * 24 * 60 * 60 * 1000));
+    cutoff = new Date(startMs + (passedCycles + 1) * cycleDays * 24 * 60 * 60 * 1000);
+  } else if (cycleMode === 'weekday') {
+    // Start from today, find the next occurrence of cycleAnchorWeekday.
+    // If today is the anchor day, advance to next week.
+    const anchorDay = cycleAnchorWeekday || 0; // 0=Sun
+    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const currentDay = nowMidnight.getDay(); // 0=Sun
+    
+    let diff = anchorDay - currentDay;
+    if (diff <= 0) {
+      diff += 7; // So if today is the anchor day (diff=0), it becomes 7
+    }
+    
+    cutoff = new Date(nowMidnight.getTime() + diff * 24 * 60 * 60 * 1000);
+  } else {
+    // fallback
+    cutoff = periodEnd;
+  }
+
+  // Clamp cutoff to periodEnd if it exceeds it
+  if (cutoff > periodEnd) {
+    return periodEnd;
+  }
+  // Ensure it's not before period start
+  if (cutoff < start) {
+    return start;
+  }
+  
   return cutoff;
 }

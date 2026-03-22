@@ -159,6 +159,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           current_period_start_date: string
+          cycle_anchor_weekday: number | null
+          cycle_fixed_days: number | null
+          cycle_mode: string
           cycles_per_period: number
           id: string
           invite_code: string
@@ -173,6 +176,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_period_start_date?: string
+          cycle_anchor_weekday?: number | null
+          cycle_fixed_days?: number | null
+          cycle_mode?: string
           cycles_per_period?: number
           id?: string
           invite_code?: string
@@ -187,6 +193,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_period_start_date?: string
+          cycle_anchor_weekday?: number | null
+          cycle_fixed_days?: number | null
+          cycle_mode?: string
           cycles_per_period?: number
           id?: string
           invite_code?: string
@@ -334,6 +343,7 @@ export type Database = {
         Args: { p_count?: number; p_start_date?: string; p_template_id: string }
         Returns: undefined
       }
+      get_current_cycle_start: { Args: { p_room_id: string }; Returns: string }
       is_room_admin: { Args: { p_room_id: string }; Returns: boolean }
       is_room_member: { Args: { p_room_id: string }; Returns: boolean }
     }

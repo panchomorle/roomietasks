@@ -31,5 +31,24 @@
 			"password": true
 		}
 	],
-	"servers": {}
+	"servers": {
+		"supabase": {
+			"command": "npx",
+			"args": [
+				"-y",
+				"@supabase/mcp-server-supabase@latest",
+				"--project-ref",
+				"${input:project-ref}",
+				"--read-only",
+				"${input:read-only}",
+				"--features",
+				"${input:features}",
+				"--api-url",
+				"${input:api-url}"
+			],
+			"env": {
+				"SUPABASE_ACCESS_TOKEN": "${input:SUPABASE_ACCESS_TOKEN}"
+			}
+		}
+	}
 }

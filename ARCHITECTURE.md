@@ -22,7 +22,7 @@
 
 ### 3. Database Schema Overview
 - **`profiles`**: User information tied to Supabase Auth.
-- **`rooms`**: Main container for groups. Defines `contribution_per_member`, `period_duration_days`, etc.
+- **`rooms`**: Main container for groups. Defines `contribution_per_member`, `period_duration_days`, `current_period_start_date`, and cycle configuration (`cycle_mode`, `cycle_anchor_weekday`, `cycle_fixed_days`).
 - **`room_members`**: Join table mapping users to rooms with roles (e.g., admin, member).
 - **`task_templates`**: Defines the blueprint for recurring tasks (e.g., patterns, points reward).
 - **`task_instances`**: Individual, actionable manifestations of a task that users claim and complete.
@@ -34,6 +34,7 @@
   - `generate_task_instances`: Creates actionable task instances based on `task_templates` recurrence rules.
   - `claim_task_instance`: Safely assigns a task to a user, checking point limits and applying cool-downs.
   - `complete_task_instance`: Validates and marks tasks as completed.
+  - `get_current_cycle_start`: A helper function that calculates the start of the currently active cycle based on the room's `cycle_mode` configuration. Used to enforce point limits.
   - `end_period`: Finalizes the current season, distributes data into history tables, and resets the board.
 
 > [!IMPORTANT]
@@ -42,7 +43,7 @@
 ## File Structure Organization
 - `/app`: Next.js App Router pages and layouts (`/dashboard`, `/room`, etc.).
 - `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`, modals).
-- `/hooks`: Custom React Query hooks (`/queries`, `/mutations`).
-- `/lib`: Helper logic, configurations, translation maps, and the Supabase client setup.
+- `/hooks`: Custom React Query hooks (`/queries`, `/mutations`) and utility hooks like `useCycleCountdown.ts`.
+- `/lib`: Helper logic, configurations, translation maps, date utilities (handling complex cycle calculations), and the Supabase client setup.
 - `/store`: Jotai atoms.
 - `/types`: Contains TypeScript types, critically including the generated `database.ts` from Supabase.

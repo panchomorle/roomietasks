@@ -14,6 +14,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatTaskDate, computeCycleCutoff } from "@/lib/dateUtils";
 import { formatPoints } from "@/lib/numberUtils";
+import { useCycleCountdown } from "@/hooks/useCycleCountdown";
 
 import { getPointColorClasses } from "@/lib/pointsColor";
 
@@ -891,6 +892,8 @@ export default function TasksPage() {
   const { data: members } = useRoomMembers(roomId);
   const { data: allTasks, isLoading: tasksLoading } = useTaskInstances(roomId, filter, sort, user?.id);
 
+  const cycleCountdown = useCycleCountdown(room);
+
   const currentUserRole = members?.find((m: any) => m.user_id === user?.id)?.role;
 
   // Split and sort tasks
@@ -904,7 +907,10 @@ export default function TasksPage() {
     const cutoff = computeCycleCutoff(
       room.current_period_start_date,
       room.period_duration_days,
-      room.cycles_per_period || 1
+      (room.cycle_mode as 'count' | 'weekday' | 'fixed_days') || 'count',
+      room.cycles_per_period || 1,
+      room.cycle_anchor_weekday,
+      room.cycle_fixed_days
     );
 
     const current: any[] = [];
@@ -963,6 +969,16 @@ export default function TasksPage() {
         </div>
         <LanguageSwitcher />
       </div>
+
+      {cycleCountdown.isActive && (
+        <p className="text-xs text-slate-500 mb-4 -mt-4">
+          {cycleCountdown.isEnded
+            ? t("cycle_ended")
+            : `${t("cycle_ends_in")} ${cycleCountdown.days > 0 ? `${cycleCountdown.days}d ` : ""}${String(cycleCountdown.hours).padStart(2, "0")}:${String(cycleCountdown.minutes).padStart(2, "0")}:${String(cycleCountdown.seconds).padStart(2, "0")}`
+          }
+        </p>
+      )}
+
 
       <div className="flex items-center gap-2 mb-4">
         <div className="flex overflow-x-auto gap-2 hide-scrollbar pb-1">
