@@ -60,3 +60,14 @@ This document tracks significant design choices made during the development of R
 - As more fairness mechanisms (Cooldowns, Point Limits, Cycles) were added, the cognitive load for new admins increased.
 - Inline explanations prevent users from having to search for a manual or guess how a setting affects the room logic.
 - Implemented edge-aware alignment (Left/Right) to prevent layout overflow on mobile/drawer screens.
+
+## 10. Web Push Notifications via PWA & Edge Functions
+**Decision**: Implemented native Web Push notifications leveraging `@serwist/next` for the Service Worker, Supabase Edge Functions for dispatch (`notify-task-completed`, `send-push`), and Database Webhooks for triggers.
+**Reasoning**:
+- **Cross-Platform**: By requiring PWA installation (Add to Home Screen), Web Push works natively on both Android and iOS (iOS 16.4+).
+- **Security & UX**: The VAPID private key is stored exclusively as a Supabase Secret and never exposed to the client. The UI cleanly handles permission states (`granted`, `denied`, `unsupported`).
+- **Decoupled Architecture**: 
+  - `task_instances` table simply fires a PostgreSQL trigger on `UPDATE ... "completed"`.
+  - Webhook edge function (`notify-task-completed`) fetches all *other* room members and invoked `send-push` in a loop.
+  - `send-push` uses the `web-push` library to encrypt the payload and dispatch it to the browser's push service. It also automatically scrubs expired subscriptions (`404` or `410` status from the push endpoint). 
+**Key Rotation**: To rotate VAPID keys, generate a new pair (`npx web-push generate-vapid-keys`), update `.env.local` for the client, and update the Supabase project secrets (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`). Existing subscriptions will require users to re-subscribe.

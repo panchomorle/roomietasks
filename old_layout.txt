@@ -12,19 +12,6 @@ export const metadata: Metadata = {
   title: "RoomieTasks — Split Chores, Earn Rewards",
   description:
     "Manage household chores with your roommates. Track tasks, earn points, and compete for the pot.",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "RoomieTasks",
-  },
-  other: {
-    "mobile-web-app-capable": "yes",
-  },
-};
-
-export const viewport = {
-  themeColor: "#4f46e5",
 };
 
 export default function RootLayout({

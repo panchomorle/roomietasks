@@ -7,6 +7,7 @@ import { useRooms, useRoom } from "@/hooks/queries/useRooms";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "@/hooks/useTranslation";
 import Link from "next/link";
+import { PushNotificationToggle } from "@/components/PushNotificationToggle";
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -38,6 +39,12 @@ export default function ProfilePage() {
           <h2 className="text-xl font-bold text-white">{user?.user_metadata?.full_name || "User"}</h2>
           <p className="text-sm text-slate-400">{user?.email}</p>
         </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="mb-8">
+        <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3 ml-2">{t("notifications")}</h3>
+        <PushNotificationToggle />
       </div>
 
       {/* Household Selector */}

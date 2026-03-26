@@ -5,6 +5,21 @@ export const translations = {
     board: "Board",
     history: "History",
     rooms: "Rooms",
+    profile: "Profile",
+
+    // Push Notifications
+    notifications: "Notifications",
+    push_notifications: "Push Notifications",
+    push_notifications_desc: "Get notified when roommates complete tasks — even when the app is closed.",
+    push_ios_note: "On iOS, the app must be installed to your Home Screen to receive notifications.",
+    push_enable: "Enable Notifications",
+    push_disable: "Disable Notifications",
+    push_enabled: "Enabled",
+    push_disabled: "Disabled",
+    push_blocked: "Blocked in browser",
+    push_unsupported: "Not supported on this browser",
+    push_enabling: "Enabling...",
+    push_disabling: "Disabling...",
 
     // Tasks Page
     pending_tasks: "Pending Tasks",
@@ -233,6 +248,21 @@ export const translations = {
     board: "Tablero",
     history: "Historial",
     rooms: "Salas",
+    profile: "Perfil",
+
+    // Push Notifications
+    notifications: "Notificaciones",
+    push_notifications: "Notificaciones Push",
+    push_notifications_desc: "Recibe alertas cuando tus compañeros completen tareas, incluso con la app cerrada.",
+    push_ios_note: "En iOS, la app debe estar instalada en tu pantalla de inicio para recibir notificaciones.",
+    push_enable: "Activar Notificaciones",
+    push_disable: "Desactivar Notificaciones",
+    push_enabled: "Activadas",
+    push_disabled: "Desactivadas",
+    push_blocked: "Bloqueadas en el navegador",
+    push_unsupported: "No compatible con este navegador",
+    push_enabling: "Activando...",
+    push_disabling: "Desactivando...",
 
     // Tasks Page
     pending_tasks: "Tareas Pendientes",
