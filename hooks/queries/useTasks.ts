@@ -66,7 +66,7 @@ export function useCompletedTasks(
 
       const { data, error } = await supabase
         .from("task_instances")
-        .select("*, profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url)")
+        .select("*, profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url), template:task_templates(*, creator:profiles!task_templates_created_by_fkey(full_name, avatar_url))")
         .eq("room_id", roomId!)
         .eq("status", "completed")
         .gte("completed_at", sevenDaysAgo.toISOString())
