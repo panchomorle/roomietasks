@@ -114,23 +114,28 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
       ? "week"
       : form.pointLimitPeriod;
 
-    await updateRoom.mutateAsync({
-      roomId: room.id,
-      updates: {
-        name: form.name,
-        contribution_per_member: form.contribution,
-        period_duration_days: parseInt(form.periodDays) || 30,
-        current_period_start_date: new Date(form.seasonStartDate).toISOString(),
-        point_limit: isPointLimitActive ? parseFloat(form.pointLimit as string) : null,
-        point_limit_period: isPointLimitActive ? pointLimitPeriod : null,
-        recurrent_cooldown_days: form.cooldownDays,
-        cycle_mode: cycleMode,
-        cycles_per_period: cyclesPerPeriod,
-        cycle_anchor_weekday: form.cycleAnchorWeekday,
-        cycle_fixed_days: parseInt(form.cycleFixedDays) || 7,
-      } as any,
-    });
-    onClose();
+    try {
+      await updateRoom.mutateAsync({
+        roomId: room.id,
+        updates: {
+          name: form.name,
+          contribution_per_member: form.contribution,
+          period_duration_days: parseInt(form.periodDays) || 30,
+          current_period_start_date: new Date(form.seasonStartDate).toISOString(),
+          point_limit: isPointLimitActive ? parseFloat(form.pointLimit as string) : null,
+          point_limit_period: isPointLimitActive ? pointLimitPeriod : null,
+          recurrent_cooldown_days: form.cooldownDays,
+          cycle_mode: cycleMode,
+          cycles_per_period: cyclesPerPeriod,
+          cycle_anchor_weekday: form.cycleAnchorWeekday,
+          cycle_fixed_days: parseInt(form.cycleFixedDays) || 7,
+        } as any,
+      });
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      alert(t("error_saving_settings"));
+    }
   };
 
   const dayLabels = [t("day_s"), t("day_m"), t("day_t"), t("day_w"), t("day_th"), t("day_f"), t("day_sa")];

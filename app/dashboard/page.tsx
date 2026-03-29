@@ -12,7 +12,7 @@ import { PointLimitModal } from "@/components/PointLimitModal";
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { formatTaskDate, computeCycleCutoff, computeCycleStart } from "@/lib/dateUtils";
+import { formatTaskDate, computeCycleCutoff, computeCycleStart, computePointLimitStart } from "@/lib/dateUtils";
 import { formatPoints } from "@/lib/numberUtils";
 import { useCycleCountdown } from "@/hooks/useCycleCountdown";
 import { useUserCyclePoints } from "@/hooks/queries/useTasks";
@@ -969,10 +969,20 @@ export default function TasksPage() {
     room.cycle_fixed_days
   ) : undefined;
 
+  const limitStart = room ? computePointLimitStart(
+    room.current_period_start_date,
+    room.point_limit_period as any,
+    room.period_duration_days,
+    room.cycle_mode as any,
+    room.cycles_per_period,
+    room.cycle_anchor_weekday,
+    room.cycle_fixed_days
+  ) : undefined;
+
   const { data: userPoints = 0 } = useUserCyclePoints(
     roomId,
     user?.id,
-    cycleStart
+    limitStart
   );
 
   return (

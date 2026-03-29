@@ -12,12 +12,14 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatPoints } from "@/lib/numberUtils";
 import { formatTaskDate } from "@/lib/dateUtils";
 import { getPointColorClasses } from "@/lib/pointsColor";
+import { TaskDetailsDrawer } from "@/components/TaskDetailsDrawer";
 
 export default function HistoryPage() {
   const { t, language } = useTranslation();
   const { user } = useAuth();
   const roomId = useAtomValue(currentRoomIdAtom);
   const [loadCount, setLoadCount] = useState(20);
+  const [selectedTask, setSelectedTask] = useState<any | null>(null);
   const { data: tasks, isLoading } = useCompletedTasks(roomId, loadCount);
   const { data: room } = useRoom(roomId);
   const uncompleteTask = useUncompleteTask();
@@ -54,7 +56,8 @@ export default function HistoryPage() {
               return (
                 <div
                   key={task.id}
-                  className="flex items-start sm:items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-[20px] p-4 sm:p-5 animate-fade-in"
+                  onClick={() => setSelectedTask(task)}
+                  className="flex items-start sm:items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-[20px] p-4 sm:p-5 animate-fade-in cursor-pointer hover:bg-white/[0.05] transition-colors"
                 >
                   <div className="w-10 h-10 rounded-[14px] bg-success/15 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
                     <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
@@ -81,7 +84,10 @@ export default function HistoryPage() {
                     </div>
                   </div>
                   <button
-                    onClick={() => uncompleteTask.mutate({ taskId: task.id })}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      uncompleteTask.mutate({ taskId: task.id });
+                    }}
                     disabled={uncompleteTask.isPending}
                     className="p-2.5 text-slate-500 hover:text-warning active:text-warning hover:bg-warning/10 active:bg-warning/15 rounded-xl transition-all -mr-1 sm:mr-0 flex-shrink-0"
                     title={t("mark_as_incomplete")}
@@ -115,6 +121,13 @@ export default function HistoryPage() {
           </div>
           <p className="text-slate-400 font-medium">{t("no_completed_tasks")}</p>
         </div>
+      )}
+
+      {selectedTask && (
+        <TaskDetailsDrawer
+          task={selectedTask}
+          onClose={() => setSelectedTask(null)}
+        />
       )}
     </div>
   );
