@@ -20,6 +20,10 @@ export const translations = {
     push_unsupported: "Not supported on this browser",
     push_enabling: "Enabling...",
     push_disabling: "Disabling...",
+    push_prompt_title: "Stay in the Loop!",
+    push_prompt_desc: "Get instant alerts when your roommates complete tasks — even when the app is closed. Never miss a point again.",
+    push_prompt_enable: "Turn On Notifications",
+    push_prompt_dismiss: "Maybe Later",
 
     // Tasks Page
     pending_tasks: "Pending Tasks",
@@ -275,6 +279,10 @@ export const translations = {
     push_unsupported: "No compatible con este navegador",
     push_enabling: "Activando...",
     push_disabling: "Desactivando...",
+    push_prompt_title: "¡Mantente al tanto!",
+    push_prompt_desc: "Recibe alertas instantáneas cuando tus compañeros completen tareas — incluso con la app cerrada. No pierdas ni un punto.",
+    push_prompt_enable: "Activar Notificaciones",
+    push_prompt_dismiss: "Quizás luego",
 
     // Tasks Page
     pending_tasks: "Tareas Pendientes",

@@ -946,20 +946,6 @@ export default function TasksPage() {
     { label: t("created_at_desc"), value: "created_at_desc" },
   ];
 
-  if (!roomId && !roomLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-        <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
-          <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold text-white mb-2">{t("no_room_selected")}</h2>
-        <p className="text-slate-400 mb-8 max-w-sm">{t("create_household_prompt")}</p>
-      </div>
-    );
-  }
-
   const cycleStart = room ? computeCycleStart(
     room.current_period_start_date,
     room.period_duration_days,
@@ -984,6 +970,20 @@ export default function TasksPage() {
     user?.id,
     limitStart
   );
+
+  if (!roomId && !roomLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+        <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mb-6 border border-white/10">
+          <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819" />
+          </svg>
+        </div>
+        <h2 className="text-2xl font-bold text-white mb-2">{t("no_room_selected")}</h2>
+        <p className="text-slate-400 mb-8 max-w-sm">{t("create_household_prompt")}</p>
+      </div>
+    );
+  }
 
   return (
     <>

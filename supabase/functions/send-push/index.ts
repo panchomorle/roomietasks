@@ -24,9 +24,9 @@ serve(async (req) => {
       });
     }
 
-    // Configure Web Push with VAPID keys from environment variables
-    const vapidPublicKey = Deno.env.get("NEXT_PUBLIC_VAPID_PUBLIC_KEY") || "BPGJrTy0n-l7ONrFlRWcNHxy4fFgfcbhzsI8KDZv6Hvp8B1Z3ZFKLZOvCSBPiVOqeeLphDqt0rS2GtxzD0Igatc";
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") || "xhRdaeCq89WVhicIHYbe-C8ui2YNaaxQYfZN95hRwFA";
+    // Configure Web Push with VAPID keys from environment secrets
+    const vapidPublicKey = Deno.env.get("NEXT_PUBLIC_VAPID_PUBLIC_KEY");
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
     const vapidSubject = Deno.env.get("VAPID_SUBJECT") || "mailto:admin@roomietasks.app";
 
     if (!vapidPublicKey || !vapidPrivateKey) {

@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!;
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, "+")
@@ -51,35 +51,46 @@ export function usePushNotifications() {
     }
     setIsLoading(true);
     try {
-      await navigator.serviceWorker.register("/sw.js");
-      const registration = await navigator.serviceWorker.ready;
+      // Step 1: Nuclear cleanup — unregister ALL service workers and their push subscriptions.
+      // This is the only reliable fix for Chrome's "AbortError: Registration failed - push service error"
+      // which happens when ghost subscriptions from previous VAPID keys linger in the browser.
+      const existingRegistrations = await navigator.serviceWorker.getRegistrations();
+      for (const reg of existingRegistrations) {
+        try {
+          const existingSub = await reg.pushManager.getSubscription();
+          if (existingSub) {
+            await existingSub.unsubscribe();
+          }
+        } catch { /* ignore */ }
+        await reg.unregister();
+      }
 
-      // Request permission
+      // Brief delay for the browser to fully release the old registrations
+      await new Promise(r => setTimeout(r, 300));
+
+      // Step 2: Request notification permission BEFORE registering the SW.
+      // This way, if the user denies, we don't leave orphan service workers.
       const result = await Notification.requestPermission();
       setPermission(result as PushPermission);
       if (result !== "granted") return;
 
-      // Ghost subscriptions from old VAPID testing iterations cause the browser to throw "AbortError" 
-      // when attempting to subscribe with a new key. We actively wipe any old subscription first.
-      let subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await subscription.unsubscribe();
-      }
+      // Step 3: Fresh service worker registration
+      await navigator.serviceWorker.register("/sw.js");
+      const registration = await navigator.serviceWorker.ready;
 
-      // Subscribe to push
-      subscription = await registration.pushManager.subscribe({
+      // Step 4: Subscribe to push with the current VAPID key
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY.trim()) as any,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY.trim()),
       });
 
       const subJson = subscription.toJSON();
       const endpoint = subscription.endpoint;
 
-      // Get user ID
+      // Step 5: Persist to Supabase
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upsert into push_subscriptions
       const { error } = await supabase.from("push_subscriptions").upsert(
         { user_id: user.id, endpoint, subscription: subJson as any },
         { onConflict: "user_id,endpoint" }
@@ -97,7 +108,6 @@ export function usePushNotifications() {
   const unsubscribe = useCallback(async () => {
     setIsLoading(true);
     try {
-      await navigator.serviceWorker.register("/sw.js");
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.getSubscription();
 

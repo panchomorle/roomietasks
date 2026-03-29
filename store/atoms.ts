@@ -17,3 +17,6 @@ export type TaskSort =
   | "created_at_desc";
 
 export const taskSortAtom = atom<TaskSort>("due_date_asc");
+
+// Push notification prompt — persisted so it only shows once
+export const pushPromptDismissedAtom = atomWithStorage<boolean>("roomietasks_push_prompt_dismissed", false);
