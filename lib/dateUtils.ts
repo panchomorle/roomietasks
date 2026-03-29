@@ -140,3 +140,46 @@ export function computeCycleStart(
 
   return cycleStart;
 }
+
+/** Returns the UTC midnight Date that marks the start of the current point limit period. */
+export function computePointLimitStart(
+  periodStartIso: string,
+  pointLimitPeriod: 'day' | 'week' | 'month' | 'cycle' | null | undefined,
+  periodDurationDays: number,
+  cycleMode: 'count' | 'weekday' | 'fixed_days',
+  cyclesPerPeriod: number,
+  cycleAnchorWeekday?: number | null,
+  cycleFixedDays?: number | null
+): Date {
+  const now = new Date();
+  const start = new Date(periodStartIso);
+  const startMs = start.getTime();
+  const nowMs = now.getTime();
+
+  if (pointLimitPeriod === 'day') {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  
+  if (pointLimitPeriod === 'week') {
+    const elapsedWeeks = Math.floor((Math.max(nowMs, startMs) - startMs) / (7 * 24 * 60 * 60 * 1000));
+    return new Date(startMs + elapsedWeeks * 7 * 24 * 60 * 60 * 1000);
+  }
+  
+  if (pointLimitPeriod === 'month') {
+    const elapsedMonths = Math.floor((Math.max(nowMs, startMs) - startMs) / (30 * 24 * 60 * 60 * 1000));
+    return new Date(startMs + elapsedMonths * 30 * 24 * 60 * 60 * 1000);
+  }
+  
+  if (pointLimitPeriod === 'cycle') {
+    return computeCycleStart(
+      periodStartIso,
+      periodDurationDays,
+      cycleMode,
+      cyclesPerPeriod,
+      cycleAnchorWeekday,
+      cycleFixedDays
+    );
+  }
+  
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}

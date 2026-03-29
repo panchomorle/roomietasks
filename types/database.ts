@@ -114,6 +114,30 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          created_at: string | null
+          endpoint: string
+          id: string
+          subscription: Json
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          endpoint: string
+          id?: string
+          subscription: Json
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          endpoint?: string
+          id?: string
+          subscription?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       room_members: {
         Row: {
           id: string
@@ -317,6 +341,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "task_templates_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "task_templates_room_id_fkey"
             columns: ["room_id"]
             isOneToOne: false
@@ -344,6 +375,10 @@ export type Database = {
         Returns: undefined
       }
       get_current_cycle_start: { Args: { p_room_id: string }; Returns: string }
+      get_user_point_status: {
+        Args: { p_room_id: string; p_user_id: string }
+        Returns: Json
+      }
       is_room_admin: { Args: { p_room_id: string }; Returns: boolean }
       is_room_member: { Args: { p_room_id: string }; Returns: boolean }
     }

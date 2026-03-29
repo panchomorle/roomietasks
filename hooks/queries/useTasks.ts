@@ -131,25 +131,30 @@ export function useLeaderboard(roomId: string | null, periodStart: string | unde
 export function useUserCyclePoints(
   roomId: string | null,
   userId: string | undefined,
-  cycleStart: Date | undefined
+  limitStart: Date | undefined
 ) {
   const supabase = createClient();
 
   return useQuery({
-    queryKey: ["user-cycle-points", roomId, userId, cycleStart?.toISOString()],
+    // We keep limitStart in the queryKey so it refetches when the period changes
+    queryKey: ["user-points", roomId, userId, limitStart?.toISOString()],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("task_instances")
-        .select("points_reward")
-        .eq("room_id", roomId!)
-        .eq("status", "completed")
-        .eq("completed_by_user_id", userId!)
-        .gte("completed_at", cycleStart!.toISOString());
+        .rpc("get_user_point_status", {
+          p_room_id: roomId!,
+          p_user_id: userId!,
+        });
 
+      const responseData = data as any;
       if (error) throw error;
+      if (!responseData || !responseData.success) {
+        throw new Error(responseData?.error || "Failed to get point status");
+      }
 
-      return data.reduce((sum, task) => sum + task.points_reward, 0);
+      // Reverting to only returning earned points as requested by user, 
+      // but syncing backend calculation
+      return responseData.earned;
     },
-    enabled: !!roomId && !!userId && !!cycleStart,
+    enabled: !!roomId && !!userId && !!limitStart,
   });
 }
