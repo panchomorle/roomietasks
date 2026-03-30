@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:icons": "node scripts/generate-icons.mjs public/icons/roomietasks.png"
   },
   "dependencies": {
     "@serwist/next": "^9.5.7",

@@ -13,6 +13,14 @@ export const metadata: Metadata = {
   description:
     "Manage household chores with your roommates. Track tasks, earn points, and compete for the pot.",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/roomietasks.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

@@ -64,20 +64,8 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md px-6">
         {/* Logo & Branding */}
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-2xl shadow-indigo-500/30 mb-6 font-primary">
-            <svg
-              className="w-10 h-10 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8.25 21v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21m0 0h4.5V3.545M12.75 21h7.5V10.75M2.25 21h1.5m18 0h-18M2.25 9l4.5-1.636M18.75 3l-1.5.545m0 6.205 3 1m1.5.5-1.5-.5M6.75 7.364V3h-3v18m3-13.636 10.5-3.819"
-              />
-            </svg>
+          <div className="inline-flex items-center justify-center w-20 h-20 mb-6">
+            <img src="/icons/roomietasks.svg" alt="RoomieTasks Logo" className="w-full h-full" style={{ filter: "drop-shadow(0 0 20px rgba(139,92,246,0.5)) drop-shadow(0 0 40px rgba(99,102,241,0.3))" }} />
           </div>
           <h1 className="text-4xl font-bold text-white tracking-tight">
             {t("login_title")}
