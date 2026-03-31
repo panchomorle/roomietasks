@@ -95,16 +95,21 @@ function fillTemplate(
 /** Localized notification strings. */
 const strings: Record<string, Record<string, string>> = {
   en: {
-    cycle_ending_title: "⏰ Cycle Ending Soon!",
-    cycle_ending_body: "The cycle in {room} ends in {time}. Finish your tasks!",
+    cycle_warning_day_title: "📅 Cycle Ending Tomorrow!",
+    cycle_warning_day_body: "The cycle in {room} ends in {time}. Claim and complete your tasks before it's over!",
+    cycle_warning_hour_title: "⏰ Cycle Ending Soon!",
+    cycle_warning_hour_body: "The cycle in {room} ends in {time}. Last chance to finish your tasks!",
     cycle_ended_title: "🔄 Cycle Ended!",
     cycle_ended_body:
       "The cycle in {room} has just ended. You can now claim tasks for the new cycle!",
   },
   es: {
-    cycle_ending_title: "⏰ ¡El ciclo está por terminar!",
-    cycle_ending_body:
-      "El ciclo en {room} termina en {time}. ¡Termina tus tareas!",
+    cycle_warning_day_title: "📅 ¡El ciclo termina mañana!",
+    cycle_warning_day_body:
+      "El ciclo en {room} termina en {time}. ¡Reclamá y completá tus tareas antes de que termine!",
+    cycle_warning_hour_title: "⏰ ¡El ciclo está por terminar!",
+    cycle_warning_hour_body:
+      "El ciclo en {room} termina en {time}. ¡Última oportunidad para terminar tus tareas!",
     cycle_ended_title: "🔄 ¡Ciclo finalizado!",
     cycle_ended_body:
       "El ciclo en {room} acaba de terminar. ¡Ya podés reclamar tareas para el nuevo ciclo!",
@@ -161,16 +166,16 @@ serve(async () => {
       const diffMs = cycleEnd.getTime() - now.getTime();
       const diffMin = Math.round(diffMs / 60000);
 
-      // Determine which notification type applies right now
-      let notificationType: "cycle_end_warning" | "cycle_ended" | null = null;
+      // Evaluate ALL possible notification types for this room in one pass.
+      // Each type uses its own dedup key so they fire independently.
+      type NotifType = "cycle_warning_day" | "cycle_warning_hour" | "cycle_ended";
 
-      if (diffMin >= 30 && diffMin <= 90) {
-        notificationType = "cycle_end_warning";
-      } else if (diffMin > -30 && diffMin <= 30) {
-        notificationType = "cycle_ended";
-      }
+      const candidates: NotifType[] = [];
+      if (diffMin >= 1200 && diffMin <= 1680) candidates.push("cycle_warning_day");  // 20h–28h before
+      if (diffMin >= 30   && diffMin <= 90)   candidates.push("cycle_warning_hour"); // 30–90 min before
+      if (diffMin > -30   && diffMin <= 30)   candidates.push("cycle_ended");        // ±30 min of end
 
-      if (!notificationType) continue;
+      if (candidates.length === 0) continue;
 
       // Use ISO timestamp of cycle end as the dedup key
       const cycleKey = cycleEnd.toISOString();
@@ -186,19 +191,7 @@ serve(async () => {
       for (const member of members) {
         const userId = member.user_id;
 
-        // Check deduplication: has this notification already been sent?
-        const { data: existing } = await supabase
-          .from("notification_log")
-          .select("id")
-          .eq("user_id", userId)
-          .eq("room_id", room.id)
-          .eq("notification_type", notificationType)
-          .eq("cycle_key", cycleKey)
-          .maybeSingle();
-
-        if (existing) continue; // Already sent — skip
-
-        // Fetch user's language preference
+        // Fetch user's language preference (once per member per room)
         const { data: profile } = await supabase
           .from("profiles")
           .select("language")
@@ -211,64 +204,65 @@ serve(async () => {
             : "en";
 
         const s = strings[lang];
-        let title: string;
-        let body: string;
 
-        if (notificationType === "cycle_end_warning") {
-          const timeLeft = formatTimeLeft(
-            Math.max(diffMin, 1),
-            lang
-          );
-          title = s.cycle_ending_title;
-          body = fillTemplate(s.cycle_ending_body, {
-            room: room.name,
-            time: timeLeft,
-          });
-        } else {
-          title = s.cycle_ended_title;
-          body = fillTemplate(s.cycle_ended_body, { room: room.name });
-        }
+        for (const notificationType of candidates) {
+          // Check deduplication per notification type
+          const { data: existing } = await supabase
+            .from("notification_log")
+            .select("id")
+            .eq("user_id", userId)
+            .eq("room_id", room.id)
+            .eq("notification_type", notificationType)
+            .eq("cycle_key", cycleKey)
+            .maybeSingle();
 
-        // Dispatch push notification
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/send-push`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              target_user_id: userId,
-              title,
-              body,
-              url: "/dashboard/tasks",
-            }),
-          });
+          if (existing) continue; // Already sent — skip
 
-          // Log so we don't re-send
-          await supabase.from("notification_log").insert({
-            user_id: userId,
-            room_id: room.id,
-            notification_type: notificationType,
-            cycle_key: cycleKey,
-          });
+          let title: string;
+          let body: string;
+          const timeLeft = formatTimeLeft(Math.max(diffMin, 1), lang);
 
-          results.push({
-            room: room.name,
-            user_id: userId,
-            type: notificationType,
-            sent: true,
-          });
-        } catch (err: unknown) {
-          const message = err instanceof Error ? err.message : String(err);
-          console.error(`Failed to send push to ${userId}:`, message);
-          results.push({
-            room: room.name,
-            user_id: userId,
-            type: notificationType,
-            sent: false,
-            error: message,
-          });
+          if (notificationType === "cycle_warning_day") {
+            title = s.cycle_warning_day_title;
+            body = fillTemplate(s.cycle_warning_day_body, { room: room.name, time: timeLeft });
+          } else if (notificationType === "cycle_warning_hour") {
+            title = s.cycle_warning_hour_title;
+            body = fillTemplate(s.cycle_warning_hour_body, { room: room.name, time: timeLeft });
+          } else {
+            title = s.cycle_ended_title;
+            body = fillTemplate(s.cycle_ended_body, { room: room.name });
+          }
+
+          // Dispatch push notification
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-push`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                target_user_id: userId,
+                title,
+                body,
+                url: "/dashboard/tasks",
+              }),
+            });
+
+            // Log so we don't re-send
+            await supabase.from("notification_log").insert({
+              user_id: userId,
+              room_id: room.id,
+              notification_type: notificationType,
+              cycle_key: cycleKey,
+            });
+
+            results.push({ room: room.name, user_id: userId, type: notificationType, sent: true });
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            console.error(`Failed to send push to ${userId}:`, message);
+            results.push({ room: room.name, user_id: userId, type: notificationType, sent: false, error: message });
+          }
         }
       }
     }
