@@ -10,6 +10,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { SeasonManager } from "@/components/SeasonManager";
 import { NotificationPromptModal } from "@/components/NotificationPromptModal";
 import { useTranslation } from "@/hooks/useTranslation";
+import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
@@ -19,6 +20,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const supabase = createClient();
+
+  // Sync timezone to DB once per session so Edge Functions can use it
+  useEffect(() => {
+    if (!user?.id) return;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    supabase
+      .from("profiles")
+      .update({ timezone: tz })
+      .eq("id", user.id)
+      .then(() => { /* fire-and-forget */ });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   useEffect(() => {
     setMounted(true);

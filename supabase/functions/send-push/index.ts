@@ -77,18 +77,20 @@ serve(async (req) => {
       try {
         await webpush.sendNotification(sub.subscription, payload);
         results.push({ endpoint: sub.endpoint, status: "success" });
-      } catch (err) {
+      } catch (err: unknown) {
         console.error(`Error sending to endpoint ${sub.endpoint}:`, err);
         
+        const webPushError = err as { statusCode?: number, message?: string };
         // If the subscription is no longer valid, delete it from the database
-        if (err.statusCode === 404 || err.statusCode === 410) {
+        if (webPushError.statusCode === 404 || webPushError.statusCode === 410) {
           await supabase
             .from("push_subscriptions")
             .delete()
             .eq("endpoint", sub.endpoint);
           results.push({ endpoint: sub.endpoint, status: "deleted_stale" });
         } else {
-          results.push({ endpoint: sub.endpoint, status: "failed", error: err.message });
+          const errorMessage = err instanceof Error ? err.message : String(err);
+          results.push({ endpoint: sub.endpoint, status: "failed", error: errorMessage });
           failureCount++;
         }
       }
@@ -104,9 +106,10 @@ serve(async (req) => {
       status: 200,
     });
 
-  } catch (err) {
+  } catch (err: unknown) {
     console.error("Function error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -25,6 +25,16 @@ export const translations = {
     push_prompt_enable: "Turn On Notifications",
     push_prompt_dismiss: "Maybe Later",
 
+    // Scheduled Push Notifications
+    notif_cycle_ending_title: "⏰ Cycle Ending Soon!",
+    notif_cycle_ending_body: "The cycle in {room} ends in {time}. Finish your tasks!",
+    notif_cycle_ended_title: "🔄 Cycle Ended!",
+    notif_cycle_ended_body: "The cycle in {room} has just ended. You can now claim tasks for the new cycle!",
+    notif_daily_no_claims_title: "📋 Don't Miss Out!",
+    notif_daily_no_claims_body: "You haven't claimed any tasks in {room} this cycle. Don't miss out or you'll lose money!",
+    notif_daily_claim_more_title: "💪 Keep Going!",
+    notif_daily_claim_more_body: "Nice work in {room}! But the cycle isn't over — claim more tasks before it ends!",
+
     // Tasks Page
     pending_tasks: "Pending Tasks",
     all: "All",
@@ -283,6 +293,16 @@ export const translations = {
     push_prompt_desc: "Recibe alertas instantáneas cuando tus compañeros completen tareas — incluso con la app cerrada. No pierdas ni un punto.",
     push_prompt_enable: "Activar Notificaciones",
     push_prompt_dismiss: "Quizás luego",
+
+    // Scheduled Push Notifications
+    notif_cycle_ending_title: "⏰ ¡El ciclo está por terminar!",
+    notif_cycle_ending_body: "El ciclo en {room} termina en {time}. ¡Termina tus tareas!",
+    notif_cycle_ended_title: "🔄 ¡Ciclo finalizado!",
+    notif_cycle_ended_body: "El ciclo en {room} acaba de terminar. ¡Ya podés reclamar tareas para el nuevo ciclo!",
+    notif_daily_no_claims_title: "📋 ¡No te quedes afuera!",
+    notif_daily_no_claims_body: "No reclamaste ninguna tarea en {room} este ciclo. ¡No te lo pierdas o perderás dinero!",
+    notif_daily_claim_more_title: "💪 ¡Seguí así!",
+    notif_daily_claim_more_body: "¡Buen trabajo en {room}! Pero el ciclo no terminó — ¡reclamá más tareas antes de que termine!",
 
     // Tasks Page
     pending_tasks: "Tareas Pendientes",

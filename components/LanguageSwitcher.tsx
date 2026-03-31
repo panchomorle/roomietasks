@@ -2,13 +2,29 @@
 
 import { useAtom } from "jotai";
 import { languageAtom } from "@/store/language";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { createClient } from "@/lib/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export function LanguageSwitcher() {
   const [language, setLanguage] = useAtom(languageAtom);
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const supabase = createClient();
+  const { user } = useAuth();
+
+  const handleLanguageChange = useCallback(async (code: "en" | "es") => {
+    setLanguage(code);
+    setIsOpen(false);
+    // Persist to DB so Edge Functions can use it for localized push notifications
+    if (user?.id) {
+      await supabase
+        .from("profiles")
+        .update({ language: code })
+        .eq("id", user.id);
+    }
+  }, [user, supabase, setLanguage]);
 
   const languages = [
     { code: "en", label: "English", flag: "🇺🇸" },
@@ -50,10 +66,7 @@ export function LanguageSwitcher() {
             {languages.map((lang) => (
               <button
                 key={lang.code}
-                onClick={() => {
-                  setLanguage(lang.code);
-                  setIsOpen(false);
-                }}
+                onClick={() => handleLanguageChange(lang.code)}
                 className={`w-full flex items-center justify-between px-4 py-3 text-sm font-medium transition-colors hover:bg-white/5 ${
                   language === lang.code ? "text-brand-400 bg-brand-400/5" : "text-slate-400"
                 }`}

@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      notification_log: {
+        Row: {
+          cycle_key: string
+          id: string
+          notification_type: string
+          room_id: string | null
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          cycle_key: string
+          id?: string
+          notification_type: string
+          room_id?: string | null
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          cycle_key?: string
+          id?: string
+          notification_type?: string
+          room_id?: string | null
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       period_history: {
         Row: {
           created_at: string
@@ -94,6 +129,8 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          language: string | null
+          timezone: string | null
           updated_at: string
         }
         Insert: {
@@ -102,6 +139,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id: string
+          language?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
@@ -110,6 +149,8 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          language?: string | null
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: []

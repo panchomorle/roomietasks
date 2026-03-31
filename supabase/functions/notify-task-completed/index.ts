@@ -101,9 +101,10 @@ serve(async (req) => {
 
         const data = await response.json();
         pushResults.push({ user_id: member.user_id, ...data });
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error(`Failed to invoke send-push for user ${member.user_id}:`, err);
-        pushResults.push({ user_id: member.user_id, error: err.message });
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        pushResults.push({ user_id: member.user_id, error: errorMessage });
       }
     }
 
@@ -111,9 +112,10 @@ serve(async (req) => {
       headers: { "Content-Type": "application/json" },
       status: 200,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Webhook processing error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { "Content-Type": "application/json" },
       status: 500,
     });
