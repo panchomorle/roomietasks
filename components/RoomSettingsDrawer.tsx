@@ -78,6 +78,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
     cyclesPerPeriod: String(room.cycles_per_period || 2),
     cycleAnchorWeekday: room.cycle_anchor_weekday ?? 1, // 1=Mon default
     cycleFixedDays: String(room.cycle_fixed_days || 7),
+    restrictNewCycleClaims: room.restrict_new_cycle_claims || false,
     seasonStartDate: (() => {
       const d = new Date(room.current_period_start_date || new Date());
       return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
@@ -129,6 +130,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
           cycles_per_period: cyclesPerPeriod,
           cycle_anchor_weekday: form.cycleAnchorWeekday,
           cycle_fixed_days: parseInt(form.cycleFixedDays) || 7,
+          restrict_new_cycle_claims: form.restrictNewCycleClaims,
         } as any,
       });
       onClose();
@@ -315,6 +317,24 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
                   </div>
                 </div>
               )}
+
+              {/* Restrict Future Cycle Claims */}
+              <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-4">
+                <SectionLabel label={t("restrict_new_cycle_claims" as any)} info={t("info_restrict_new_cycle_claims" as any)} align="left" className="flex-1" />
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, restrictNewCycleClaims: !form.restrictNewCycleClaims })}
+                  className={`relative inline-flex items-center h-5 w-9 rounded-full transition-colors focus:outline-none flex-shrink-0 ${
+                    form.restrictNewCycleClaims ? "bg-brand-500" : "bg-white/10"
+                  }`}
+                >
+                  <span
+                    className={`inline-block w-3.5 h-3.5 bg-white rounded-full shadow transition-transform ${
+                      form.restrictNewCycleClaims ? "translate-x-4" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+              </div>
 
               {/* Preview hint */}
               {previewCutoff && (

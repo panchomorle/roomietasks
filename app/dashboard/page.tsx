@@ -28,13 +28,13 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
   const deleteTask = useDeleteTask();
   const [showOptions, setShowOptions] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; type: "point_limit_exceeded" | "too_early" | "claim_limit_warning" | "claim_cooldown_active"; details?: any } | null>(null);
+  const [errorModal, setErrorModal] = useState<{ isOpen: boolean; type: "point_limit_exceeded" | "too_early" | "claim_limit_warning" | "claim_cooldown_active" | "claim_not_current_cycle"; details?: any } | null>(null);
 
   const handleClaim = async () => {
     try {
       await claimTask.mutateAsync({ taskId: task.id, userId });
     } catch (err: any) {
-      if (err.code === "claim_limit_warning" || err.code === "claim_cooldown_active") {
+      if (err.code === "claim_limit_warning" || err.code === "claim_cooldown_active" || err.code === "claim_not_current_cycle") {
         setErrorModal({
           isOpen: true,
           type: err.code as any,

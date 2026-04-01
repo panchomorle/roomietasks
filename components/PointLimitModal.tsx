@@ -8,7 +8,7 @@ import { translations } from "@/lib/translations";
 interface PointLimitModalProps {
   isOpen: boolean;
   onClose: () => void;
-  errorType: "point_limit_exceeded" | "too_early" | "claim_limit_warning" | "claim_cooldown_active";
+  errorType: "point_limit_exceeded" | "too_early" | "claim_limit_warning" | "claim_cooldown_active" | "claim_not_current_cycle";
   details?: any;
   taskId?: string;
   userId?: string;
@@ -32,6 +32,7 @@ export function PointLimitModal({
   const isPointLimit = errorType === "point_limit_exceeded";
   const isClaimWarning = errorType === "claim_limit_warning";
   const isCooldown = errorType === "claim_cooldown_active";
+  const isFutureCycle = errorType === "claim_not_current_cycle";
 
   const handleGiveUp = async () => {
     if (taskId) {
@@ -67,6 +68,8 @@ export function PointLimitModal({
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
             ) : isCooldown ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            ) : isFutureCycle ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             ) : (
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m0-10.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.75c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.57-.598-3.75h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008H12v-.008z" />
             )}
@@ -74,7 +77,7 @@ export function PointLimitModal({
         </div>
 
         <h2 className={`text-2xl font-black text-white mb-3`}>
-          {isPointLimit ? t("limit_reached") : isClaimWarning ? t("point_warning") : isCooldown ? t("cooldown_active") : t("too_early")}
+          {isPointLimit ? t("limit_reached" as any) : isClaimWarning ? t("point_warning" as any) : isCooldown ? t("cooldown_active" as any) : isFutureCycle ? t("claim_not_current_cycle" as any) : t("too_early" as any)}
         </h2>
         
         <p className="text-slate-400 text-sm leading-relaxed mb-8 max-w-[280px] mx-auto">
@@ -103,10 +106,12 @@ export function PointLimitModal({
             </>
           ) : isCooldown ? (
             <>
-              {t("cooldown_desc")
+              {t("cooldown_desc" as any)
                 .replace("{days}", details?.remaining_days || "0")
                 .replace("{hours}", details?.remaining_hours || "0")}
             </>
+          ) : isFutureCycle ? (
+            t("claim_not_current_cycle_desc" as any)
           ) : errorType === "too_early" ? (
             <>
               {t("too_early_desc").replace(

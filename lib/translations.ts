@@ -269,6 +269,10 @@ export const translations = {
     language_code: "en-US",
     share_title: "Join {room} on RoomieTasks",
     share_text: "Your roommate invited you to join {room}. Tap the link to join!",
+    restrict_new_cycle_claims: "Restrict Future Cycle Claims",
+    info_restrict_new_cycle_claims: "When enabled, members can only claim tasks that are due in the current cycle. Tasks from future cycles cannot be claimed until that cycle begins.",
+    claim_not_current_cycle: "Future Cycle",
+    claim_not_current_cycle_desc: "This task belongs to a future cycle. You can only claim it once the new cycle begins.",
   },
   es: {
     // Tabs
@@ -540,6 +544,10 @@ export const translations = {
     language_code: "es-ES",
     share_title: "Únete a {room} en RoomieTasks",
     share_text: "Tu compañero te invitó a unirte a {room}. ¡Toca el link para unirte!",
+    restrict_new_cycle_claims: "Restringir Reclamaciones de Ciclos Futuros",
+    info_restrict_new_cycle_claims: "Cuando está activado, los miembros solo pueden reclamar tareas que vencen en el ciclo actual. Las tareas de ciclos futuros no se pueden reclamar hasta que ese ciclo comience.",
+    claim_not_current_cycle: "Ciclo Futuro",
+    claim_not_current_cycle_desc: "Esta tarea pertenece a un ciclo futuro. Podrás reclamarla cuando comience el nuevo ciclo.",
   },
 };
 

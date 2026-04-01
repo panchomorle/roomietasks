@@ -483,6 +483,7 @@ export function useUpdateRoom() {
         period_duration_days?: number;
         point_limit?: number | null;
         point_limit_period?: string | null;
+        restrict_new_cycle_claims?: boolean;
       };
     }) => {
       const { data, error } = await supabase
