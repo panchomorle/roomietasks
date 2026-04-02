@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient, SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  getNotificationStrings,
+  fillTemplate,
+} from "./notificationStrings.ts";
 
 // ---------------------------------------------------------------------------
 // Cycle computation (mirrors lib/dateUtils.ts → computeCycleCutoff)
@@ -103,30 +107,6 @@ function computeCycleStart(
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Replace {room} placeholders in a template string. */
-function fillTemplate(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
-}
-
-/** Localized notification strings. */
-const strings: Record<string, Record<string, string>> = {
-  en: {
-    daily_no_claims_title: "📋 Don't Miss Out!",
-    daily_no_claims_body:
-      "You haven't claimed any tasks in {room} this cycle. Don't miss out or you'll lose money!",
-    daily_claim_more_title: "💪 Keep Going!",
-    daily_claim_more_body:
-      "Nice work in {room}! But the cycle isn't over — claim more tasks before it ends!",
-  },
-  es: {
-    daily_no_claims_title: "📋 ¡No te quedes afuera!",
-    daily_no_claims_body:
-      "No reclamaste ninguna tarea en {room} este ciclo. ¡No te lo pierdas o perderás dinero!",
-    daily_claim_more_title: "💪 ¡Seguí así!",
-    daily_claim_more_body:
-      "¡Buen trabajo en {room}! Pero el ciclo no terminó — ¡reclamá más tareas antes de que termine!",
-  },
-};
 
 /** Today's date string in UTC, used as the dedup key for daily reminders. */
 function todayUtcKey(): string {
@@ -192,11 +172,11 @@ serve(async () => {
         .maybeSingle();
 
       const lang =
-        profile?.language && strings[profile.language]
+        profile?.language && getNotificationStrings(profile.language)
           ? profile.language
           : "en";
 
-      const s = strings[lang];
+      const s = getNotificationStrings(lang);
 
       // --- Fetch all rooms this user belongs to ---
       const { data: memberships, error: memberError } = await supabase
@@ -287,8 +267,8 @@ serve(async () => {
             roomName,
             "daily_reminder_no_claims",
             todayKey,
-            s.daily_no_claims_title,
-            fillTemplate(s.daily_no_claims_body, { room: roomName })
+            s.notif_daily_no_claims_title,
+            fillTemplate(s.notif_daily_no_claims_body, { room: roomName })
           );
           notificationSent = true;
           results.push({ user_id: userId, room: roomName, type: "no_claims" });
@@ -304,8 +284,8 @@ serve(async () => {
             roomName,
             "daily_reminder_claim_more",
             todayKey,
-            s.daily_claim_more_title,
-            fillTemplate(s.daily_claim_more_body, { room: roomName })
+            s.notif_daily_claim_more_title,
+            fillTemplate(s.notif_daily_claim_more_body, { room: roomName })
           );
           notificationSent = true;
           results.push({ user_id: userId, room: roomName, type: "claim_more" });
@@ -355,7 +335,7 @@ async function sendReminder(
         target_user_id: userId,
         title,
         body,
-        url: "/dashboard/tasks",
+        url: "/dashboard",
       }),
     });
 

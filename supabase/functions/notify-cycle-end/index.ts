@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  getNotificationStrings,
+  fillTemplate,
+} from "./notificationStrings.ts";
 
 // ---------------------------------------------------------------------------
 // Cycle computation (mirrors lib/dateUtils.ts → computeCycleCutoff)
@@ -61,60 +65,14 @@ function computeCycleCutoff(
   return cutoff;
 }
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 /** Format minutes into a human-readable string. */
-function formatTimeLeft(
-  minutesLeft: number,
-  language: string
-): string {
+function formatTimeLeft(minutesLeft: number): string {
   const h = Math.floor(minutesLeft / 60);
   const m = minutesLeft % 60;
-
-  if (language === "es") {
-    if (h > 0 && m > 0) return `${h}h ${m}min`;
-    if (h > 0) return `${h}h`;
-    return `${m}min`;
-  } else {
-    if (h > 0 && m > 0) return `${h}h ${m}min`;
-    if (h > 0) return `${h}h`;
-    return `${m} min`;
-  }
+  if (h > 0 && m > 0) return `${h}h ${m}min`;
+  if (h > 0) return `${h}h`;
+  return `${m} min`;
 }
-
-/** Replace {room} and {time} placeholders in a template string. */
-function fillTemplate(
-  template: string,
-  vars: Record<string, string>
-): string {
-  return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? `{${key}}`);
-}
-
-/** Localized notification strings. */
-const strings: Record<string, Record<string, string>> = {
-  en: {
-    cycle_warning_day_title: "📅 Cycle Ending Tomorrow!",
-    cycle_warning_day_body: "The cycle in {room} ends in {time}. Claim and complete your tasks before it's over!",
-    cycle_warning_hour_title: "⏰ Cycle Ending Soon!",
-    cycle_warning_hour_body: "The cycle in {room} ends in {time}. Last chance to finish your tasks!",
-    cycle_ended_title: "🔄 Cycle Ended!",
-    cycle_ended_body:
-      "The cycle in {room} has just ended. You can now claim tasks for the new cycle!",
-  },
-  es: {
-    cycle_warning_day_title: "📅 ¡El ciclo termina mañana!",
-    cycle_warning_day_body:
-      "El ciclo en {room} termina en {time}. ¡Reclamá y completá tus tareas antes de que termine!",
-    cycle_warning_hour_title: "⏰ ¡El ciclo está por terminar!",
-    cycle_warning_hour_body:
-      "El ciclo en {room} termina en {time}. ¡Última oportunidad para terminar tus tareas!",
-    cycle_ended_title: "🔄 ¡Ciclo finalizado!",
-    cycle_ended_body:
-      "El ciclo en {room} acaba de terminar. ¡Ya podés reclamar tareas para el nuevo ciclo!",
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Main
@@ -199,11 +157,11 @@ serve(async () => {
           .maybeSingle();
 
         const lang =
-          profile?.language && strings[profile.language]
+          profile?.language && getNotificationStrings(profile.language)
             ? profile.language
             : "en";
 
-        const s = strings[lang];
+        const s = getNotificationStrings(lang);
 
         for (const notificationType of candidates) {
           // Check deduplication per notification type
@@ -220,17 +178,17 @@ serve(async () => {
 
           let title: string;
           let body: string;
-          const timeLeft = formatTimeLeft(Math.max(diffMin, 1), lang);
+          const timeLeft = formatTimeLeft(Math.max(diffMin, 1));
 
           if (notificationType === "cycle_warning_day") {
-            title = s.cycle_warning_day_title;
-            body = fillTemplate(s.cycle_warning_day_body, { room: room.name, time: timeLeft });
+            title = s.notif_cycle_warning_day_title;
+            body = fillTemplate(s.notif_cycle_warning_day_body, { room: room.name, time: timeLeft });
           } else if (notificationType === "cycle_warning_hour") {
-            title = s.cycle_warning_hour_title;
-            body = fillTemplate(s.cycle_warning_hour_body, { room: room.name, time: timeLeft });
+            title = s.notif_cycle_warning_hour_title;
+            body = fillTemplate(s.notif_cycle_warning_hour_body, { room: room.name, time: timeLeft });
           } else {
-            title = s.cycle_ended_title;
-            body = fillTemplate(s.cycle_ended_body, { room: room.name });
+            title = s.notif_cycle_ended_title;
+            body = fillTemplate(s.notif_cycle_ended_body, { room: room.name });
           }
 
           // Dispatch push notification
@@ -245,7 +203,7 @@ serve(async () => {
                 target_user_id: userId,
                 title,
                 body,
-                url: "/dashboard/tasks",
+                url: "/dashboard",
               }),
             });
 

@@ -2,10 +2,11 @@
 
 import { useAtom } from "jotai";
 import { languageAtom } from "@/store/language";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import type { Language } from "@/lib/translations";
 
 export function LanguageSwitcher() {
   const [language, setLanguage] = useAtom(languageAtom);
@@ -13,6 +14,26 @@ export function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
   const supabase = createClient();
   const { user } = useAuth();
+
+  // Sync DB → atom on login so push notifications use the correct language
+  // even for users who set their preference before the DB-write was wired up.
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("language")
+      .eq("id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        const dbLang = data?.language as Language | null | undefined;
+        if (dbLang && dbLang !== language) {
+          setLanguage(dbLang);
+        }
+      });
+    // Run only once after user becomes available — intentionally omitting `language`
+    // from the dep array to avoid a write-then-read loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const handleLanguageChange = useCallback(async (code: "en" | "es") => {
     setLanguage(code);

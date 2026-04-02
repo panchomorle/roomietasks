@@ -1,7 +1,11 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  getNotificationStrings,
+  fillTemplate,
+} from "./notificationStrings.ts";
 
-serve(async (req) => {
+serve(async (req: Request) => {
   try {
     const payload = await req.json();
 
@@ -61,10 +65,6 @@ serve(async (req) => {
     const taskTitle = newRecord.title;
     const points = newRecord.points_reward;
 
-    // The notification title and body
-    const title = `Task Completed! 🎉`;
-    const body = `${userName} completed "${taskTitle}" in ${roomName} (+${points} pts)`;
-
     // Fetch all OTHER members of the room
     const { data: roomMembers, error: membersError } = await supabase
       .from("room_members")
@@ -81,26 +81,45 @@ serve(async (req) => {
       return new Response("No other room members to notify", { status: 200 });
     }
 
-    // Dispatch a call to our `send-push` edge function for each other member
+    // Dispatch a call to our `send-push` edge function for each other member,
+    // using each recipient's language preference from their profile.
     const pushResults = [];
     for (const member of roomMembers) {
       try {
+        // Fetch each recipient's preferred language
+        const { data: recipientProfile } = await supabase
+          .from("profiles")
+          .select("language")
+          .eq("id", member.user_id)
+          .maybeSingle();
+
+        const lang = recipientProfile?.language ?? "en";
+        const s = getNotificationStrings(lang);
+
+        const title = s.notif_task_completed_title;
+        const body = fillTemplate(s.notif_task_completed_body, {
+          user: userName,
+          task: taskTitle,
+          room: roomName,
+          points: String(points),
+        });
+
         const response = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${supabaseServiceKey}`, // Bypass invoke auth
+            "Authorization": `Bearer ${supabaseServiceKey}`,
           },
           body: JSON.stringify({
             target_user_id: member.user_id,
             title,
             body,
-            url: "/dashboard/tasks",
+            url: "/dashboard",
           }),
         });
 
         const data = await response.json();
-        pushResults.push({ user_id: member.user_id, ...data });
+        pushResults.push({ user_id: member.user_id, lang, ...data });
       } catch (err: unknown) {
         console.error(`Failed to invoke send-push for user ${member.user_id}:`, err);
         const errorMessage = err instanceof Error ? err.message : String(err);
