@@ -51,9 +51,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }, [mounted, currentRoomId, hasRooms, rooms, roomsLoading, setCurrentRoomId]);
 
-  // If no room is active and user is not on /dashboard/rooms, redirect there
+  // If no room is active and user is not on /dashboard/rooms or /dashboard/profile, redirect there
   useEffect(() => {
-    if (!authLoading && !roomsLoading && !hasRooms && pathname !== "/dashboard/rooms") {
+    if (!authLoading && !roomsLoading && !hasRooms && pathname !== "/dashboard/rooms" && pathname !== "/dashboard/profile") {
       router.replace("/dashboard/rooms");
     }
   }, [authLoading, roomsLoading, hasRooms, pathname, router]);

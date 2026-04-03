@@ -1,34 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const getUser = async () => {
+  const { data: user = null, isLoading: loading } = useQuery({
+    queryKey: ["auth-user"],
+    queryFn: async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setUser(user);
-      setLoading(false);
-    };
+      return user ?? null;
+    },
+    staleTime: 1000 * 60 * 60, // 1 hour (reuse cache)
+  });
 
-    getUser();
-
+  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      // Sync auth state changes (login/logout/token refresh) to the cache instantly
+      queryClient.setQueryData(["auth-user"], session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, [supabase, queryClient]);
 
   const signInWithGoogle = async (nextPath?: string) => {
     const redirectTo = nextPath 
@@ -47,7 +47,7 @@ export function useAuth() {
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
-    setUser(null);
+    queryClient.setQueryData(["auth-user"], null);
   };
 
   return { user, loading, signInWithGoogle, signOut };
