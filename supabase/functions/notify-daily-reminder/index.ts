@@ -6,6 +6,61 @@ import {
 } from "./notificationStrings.ts";
 
 // ---------------------------------------------------------------------------
+// Timezone helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the local date/time components for a given IANA timezone.
+ * Uses Intl.DateTimeFormat so it works correctly in Deno/Edge without
+ * any third-party date library.
+ */
+function getLocalComponents(date: Date, tz: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type: string) =>
+    parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
+
+  return {
+    year: get("year"),
+    month: get("month"),   // 1-based
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+/**
+ * Builds a fake "now" Date whose UTC components equal the user's local
+ * wall-clock time. This lets computeCycleCutoff (which uses getFullYear,
+ * getMonth, getDate, getDay — all local-to-the-Date-object methods)
+ * produce the same result as the user's browser.
+ */
+function localNow(utcNow: Date, tz: string): Date {
+  const c = getLocalComponents(utcNow, tz);
+  return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hour, c.minute, c.second));
+}
+
+/**
+ * Returns today's date string in the user's local timezone, used as the
+ * dedup key for daily reminders. This ensures a user in UTC-3 whose
+ * "today" is April 3 doesn't get deduped against a UTC April 4 key.
+ */
+function todayLocalKey(utcNow: Date, tz: string): string {
+  const c = getLocalComponents(utcNow, tz);
+  return `${c.year}-${String(c.month).padStart(2, "0")}-${String(c.day).padStart(2, "0")}`;
+}
+
+// ---------------------------------------------------------------------------
 // Cycle computation (mirrors lib/dateUtils.ts → computeCycleCutoff)
 // ---------------------------------------------------------------------------
 
@@ -104,17 +159,6 @@ function computeCycleStart(
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-
-/** Today's date string in UTC, used as the dedup key for daily reminders. */
-function todayUtcKey(): string {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
-}
-
-// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -125,7 +169,6 @@ serve(async () => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const now = new Date();
-    const todayKey = todayUtcKey();
 
     // Fetch every user who has at least one push subscription
     const { data: subscribers, error: subError } = await supabase
@@ -146,7 +189,17 @@ serve(async () => {
     const results = [];
 
     for (const userId of uniqueUserIds) {
-      // --- Dedup: skip if we already sent ANY daily reminder today ---
+      // --- Fetch user language + timezone ---
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("language, timezone")
+        .eq("id", userId)
+        .maybeSingle();
+
+      const userTz = profile?.timezone || "UTC";
+      const todayKey = todayLocalKey(now, userTz);
+
+      // --- Dedup: skip if we already sent ANY daily reminder today (user's local today) ---
       const { data: alreadySent } = await supabase
         .from("notification_log")
         .select("id")
@@ -164,13 +217,6 @@ serve(async () => {
         continue;
       }
 
-      // --- Fetch user language ---
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("language")
-        .eq("id", userId)
-        .maybeSingle();
-
       const lang =
         profile?.language && getNotificationStrings(profile.language)
           ? profile.language
@@ -187,6 +233,9 @@ serve(async () => {
         .eq("user_id", userId);
 
       if (memberError || !memberships) continue;
+
+      // Compute user's local "now" for cycle calculations
+      const userNow = localNow(now, userTz);
 
       // Evaluate each room independently and send ONE notification for the
       // first room where the user is eligible (worst-case scenario first)
@@ -215,7 +264,7 @@ serve(async () => {
 
         if (!hasActiveCycles) continue;
 
-        // Compute the current cycle window [cycleStart, cycleEnd)
+        // Compute the current cycle window using user's local timezone
         const cycleStart = computeCycleStart(
           periodStartIso,
           periodDurationDays,
@@ -223,7 +272,7 @@ serve(async () => {
           cyclesPerPeriod,
           cycleAnchorWeekday,
           cycleFixedDays,
-          now
+          userNow
         );
         const cycleEnd = computeCycleCutoff(
           periodStartIso,
@@ -232,7 +281,7 @@ serve(async () => {
           cyclesPerPeriod,
           cycleAnchorWeekday,
           cycleFixedDays,
-          now
+          userNow
         );
 
         // Count completed tasks by this user in this cycle
@@ -271,7 +320,7 @@ serve(async () => {
             fillTemplate(s.notif_daily_no_claims_body, { room: roomName })
           );
           notificationSent = true;
-          results.push({ user_id: userId, room: roomName, type: "no_claims" });
+          results.push({ user_id: userId, room: roomName, type: "no_claims", tz: userTz });
         }
         // Scenario B: has completed work but no active claims
         else if (completed > 0 && pending === 0) {
@@ -288,7 +337,7 @@ serve(async () => {
             fillTemplate(s.notif_daily_claim_more_body, { room: roomName })
           );
           notificationSent = true;
-          results.push({ user_id: userId, room: roomName, type: "claim_more" });
+          results.push({ user_id: userId, room: roomName, type: "claim_more", tz: userTz });
         }
       }
 

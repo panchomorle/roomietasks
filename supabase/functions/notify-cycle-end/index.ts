@@ -6,6 +6,53 @@ import {
 } from "./notificationStrings.ts";
 
 // ---------------------------------------------------------------------------
+// Timezone helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns the local date/time components for a given IANA timezone.
+ * Uses Intl.DateTimeFormat so it works correctly in Deno/Edge without
+ * any third-party date library.
+ */
+function getLocalComponents(date: Date, tz: string) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(date);
+
+  const get = (type: string) =>
+    parseInt(parts.find((p) => p.type === type)?.value ?? "0", 10);
+
+  return {
+    year: get("year"),
+    month: get("month"),   // 1-based
+    day: get("day"),
+    hour: get("hour"),
+    minute: get("minute"),
+    second: get("second"),
+  };
+}
+
+/**
+ * Builds a fake "now" Date whose UTC components equal the user's local
+ * wall-clock time. This lets computeCycleCutoff (which uses getFullYear,
+ * getMonth, getDate, getDay — all local-to-the-Date-object methods)
+ * produce the same result as the user's browser.
+ */
+function localNow(utcNow: Date, tz: string): Date {
+  const c = getLocalComponents(utcNow, tz);
+  // Construct a Date using UTC setters so that .getFullYear()/.getMonth()
+  // etc. return the user's local values.
+  return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hour, c.minute, c.second));
+}
+
+// ---------------------------------------------------------------------------
 // Cycle computation (mirrors lib/dateUtils.ts → computeCycleCutoff)
 // ---------------------------------------------------------------------------
 
@@ -111,50 +158,52 @@ serve(async () => {
 
       if (!hasActiveCycles) continue;
 
-      const cycleEnd = computeCycleCutoff(
-        room.current_period_start_date,
-        room.period_duration_days,
-        room.cycle_mode,
-        room.cycles_per_period,
-        room.cycle_anchor_weekday,
-        room.cycle_fixed_days,
-        now
-      );
-
-      const diffMs = cycleEnd.getTime() - now.getTime();
-      const diffMin = Math.round(diffMs / 60000);
-
-      // Evaluate ALL possible notification types for this room in one pass.
-      // Each type uses its own dedup key so they fire independently.
-      type NotifType = "cycle_warning_day" | "cycle_warning_hour" | "cycle_ended";
-
-      const candidates: NotifType[] = [];
-      if (diffMin >= 1200 && diffMin <= 1680) candidates.push("cycle_warning_day");  // 20h–28h before
-      if (diffMin >= 30   && diffMin <= 90)   candidates.push("cycle_warning_hour"); // 30–90 min before
-      if (diffMin > -30   && diffMin <= 30)   candidates.push("cycle_ended");        // ±30 min of end
-
-      if (candidates.length === 0) continue;
-
-      // Use ISO timestamp of cycle end as the dedup key
-      const cycleKey = cycleEnd.toISOString();
-
-      // Fetch all room members
+      // Fetch all room members with their profile info (language + timezone)
       const { data: members, error: membersError } = await supabase
         .from("room_members")
-        .select("user_id")
+        .select("user_id, profiles(language, timezone)")
         .eq("room_id", room.id);
 
       if (membersError || !members || members.length === 0) continue;
 
       for (const member of members) {
         const userId = member.user_id;
+        const profile = (member as unknown as { profiles: { language?: string; timezone?: string } | null }).profiles;
+        const userTz = profile?.timezone || "UTC";
 
-        // Fetch user's language preference (once per member per room)
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("language")
-          .eq("id", userId)
-          .maybeSingle();
+        // Compute cycle cutoff using the user's local timezone perspective.
+        // For weekday mode this is critical — "next Saturday" depends on
+        // what day it currently is in the user's timezone, not UTC.
+        const userNow = localNow(now, userTz);
+
+        const cycleEnd = computeCycleCutoff(
+          room.current_period_start_date,
+          room.period_duration_days,
+          room.cycle_mode,
+          room.cycles_per_period,
+          room.cycle_anchor_weekday,
+          room.cycle_fixed_days,
+          userNow
+        );
+
+        // diffMin: how many minutes the user's browser would show.
+        // The browser does: cutoff.getTime() - Date.now()
+        // We replicate: cutoff (computed with local now) − userNow
+        const diffMs = cycleEnd.getTime() - userNow.getTime();
+        const diffMin = Math.round(diffMs / 60000);
+
+        // Evaluate ALL possible notification types for this member.
+        type NotifType = "cycle_warning_day" | "cycle_warning_hour" | "cycle_ended";
+
+        const candidates: NotifType[] = [];
+        if (diffMin >= 1200 && diffMin <= 1680) candidates.push("cycle_warning_day");  // 20h–28h before
+        if (diffMin >= 30   && diffMin <= 90)   candidates.push("cycle_warning_hour"); // 30–90 min before
+        if (diffMin > -30   && diffMin <= 30)   candidates.push("cycle_ended");        // ±30 min of end
+
+        if (candidates.length === 0) continue;
+
+        // Use ISO timestamp of cycle end as the dedup key
+        const cycleKey = cycleEnd.toISOString();
 
         const lang =
           profile?.language && getNotificationStrings(profile.language)
@@ -215,11 +264,11 @@ serve(async () => {
               cycle_key: cycleKey,
             });
 
-            results.push({ room: room.name, user_id: userId, type: notificationType, sent: true });
+            results.push({ room: room.name, user_id: userId, type: notificationType, tz: userTz, sent: true });
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             console.error(`Failed to send push to ${userId}:`, message);
-            results.push({ room: room.name, user_id: userId, type: notificationType, sent: false, error: message });
+            results.push({ room: room.name, user_id: userId, type: notificationType, tz: userTz, sent: false, error: message });
           }
         }
       }
