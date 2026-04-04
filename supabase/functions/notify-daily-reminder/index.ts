@@ -284,6 +284,16 @@ serve(async () => {
           userNow
         );
 
+        // cycleStart/cycleEnd were computed using userNow (a fake-UTC Date whose
+        // UTC components = user's local wall-clock). But completed_at in the DB is
+        // stored in real UTC. We must convert back to real UTC before querying.
+        //
+        // tzOffsetMs = how many ms userNow is ahead of real now (positive for UTC+,
+        // negative for UTC-).  For America/Buenos_Aires (UTC-3) this is -10800000.
+        const tzOffsetMs = userNow.getTime() - now.getTime();
+        const realCycleStartUtc = new Date(cycleStart.getTime() - tzOffsetMs);
+        const realCycleEndUtc = new Date(cycleEnd.getTime() - tzOffsetMs);
+
         // Count completed tasks by this user in this cycle
         const { count: completedCount } = await supabase
           .from("task_instances")
@@ -291,8 +301,8 @@ serve(async () => {
           .eq("room_id", roomId)
           .eq("completed_by_user_id", userId)
           .eq("status", "completed")
-          .gte("completed_at", cycleStart.toISOString())
-          .lt("completed_at", cycleEnd.toISOString());
+          .gte("completed_at", realCycleStartUtc.toISOString())
+          .lt("completed_at", realCycleEndUtc.toISOString());
 
         // Count pending (claimed but not yet completed) tasks by this user
         const { count: pendingCount } = await supabase

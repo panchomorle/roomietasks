@@ -186,24 +186,38 @@ serve(async () => {
           userNow
         );
 
-        // diffMin: how many minutes the user's browser would show.
-        // The browser does: cutoff.getTime() - Date.now()
-        // We replicate: cutoff (computed with local now) − userNow
+        // diffMin: how many minutes until the NEXT cycle end (for warning notifs).
         const diffMs = cycleEnd.getTime() - userNow.getTime();
         const diffMin = Math.round(diffMs / 60000);
+
+        // For cycle_ended we need to detect when the PREVIOUS cutoff just passed.
+        // At the exact boundary, computeCycleCutoff jumps forward to the next cycle
+        // (diff=0 becomes +7 in weekday mode), so we can't use diffMin≈0.
+        // Instead, we compute what the cutoff was 61 minutes ago (safely in the
+        // previous cycle window) and check if that boundary just passed.
+        const userNowMinus61 = new Date(userNow.getTime() - 61 * 60 * 1000);
+        const prevCycleEnd = computeCycleCutoff(
+          room.current_period_start_date,
+          room.period_duration_days,
+          room.cycle_mode,
+          room.cycles_per_period,
+          room.cycle_anchor_weekday,
+          room.cycle_fixed_days,
+          userNowMinus61
+        );
+        // prevCycleEnd just passed if it's within the last 60 minutes
+        const prevDiffMin = Math.round((prevCycleEnd.getTime() - userNow.getTime()) / 60000);
+        const cycleJustEnded = prevDiffMin > -60 && prevDiffMin <= 0;
 
         // Evaluate ALL possible notification types for this member.
         type NotifType = "cycle_warning_day" | "cycle_warning_hour" | "cycle_ended";
 
-        const candidates: NotifType[] = [];
-        if (diffMin >= 1200 && diffMin <= 1680) candidates.push("cycle_warning_day");  // 20h–28h before
-        if (diffMin >= 30   && diffMin <= 90)   candidates.push("cycle_warning_hour"); // 30–90 min before
-        if (diffMin > -30   && diffMin <= 30)   candidates.push("cycle_ended");        // ±30 min of end
+        const candidates: { type: NotifType; key: string }[] = [];
+        if (diffMin >= 1200 && diffMin <= 1680) candidates.push({ type: "cycle_warning_day", key: cycleEnd.toISOString() });  // 20h–28h before
+        if (diffMin >= 30   && diffMin <= 90)   candidates.push({ type: "cycle_warning_hour", key: cycleEnd.toISOString() }); // 30–90 min before
+        if (cycleJustEnded)                     candidates.push({ type: "cycle_ended", key: prevCycleEnd.toISOString() });    // within 60 min after
 
         if (candidates.length === 0) continue;
-
-        // Use ISO timestamp of cycle end as the dedup key
-        const cycleKey = cycleEnd.toISOString();
 
         const lang =
           profile?.language && getNotificationStrings(profile.language)
@@ -212,7 +226,7 @@ serve(async () => {
 
         const s = getNotificationStrings(lang);
 
-        for (const notificationType of candidates) {
+        for (const { type: notificationType, key: cycleKey } of candidates) {
           // Check deduplication per notification type
           const { data: existing } = await supabase
             .from("notification_log")

@@ -15,8 +15,10 @@ export function LanguageSwitcher() {
   const supabase = createClient();
   const { user } = useAuth();
 
-  // Sync DB → atom on login so push notifications use the correct language
-  // even for users who set their preference before the DB-write was wired up.
+  // Sync language between localStorage atom and DB on login.
+  // Priority: if the user already has a non-default preference in localStorage,
+  // push it to DB (covers users who chose a language before DB-write was wired up).
+  // Otherwise, if DB has a non-default value, pull it into the atom.
   useEffect(() => {
     if (!user?.id) return;
     supabase
@@ -26,7 +28,16 @@ export function LanguageSwitcher() {
       .maybeSingle()
       .then(({ data }) => {
         const dbLang = data?.language as Language | null | undefined;
-        if (dbLang && dbLang !== language) {
+        if (language && language !== "en") {
+          // Local has an explicit preference — persist it to DB if out of sync
+          if (dbLang !== language) {
+            supabase
+              .from("profiles")
+              .update({ language })
+              .eq("id", user.id);
+          }
+        } else if (dbLang && dbLang !== "en") {
+          // Local is still the default — adopt the DB value
           setLanguage(dbLang);
         }
       });
