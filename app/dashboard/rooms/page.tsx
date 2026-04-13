@@ -12,6 +12,7 @@ import { RoomSettingsDrawer } from "@/components/RoomSettingsDrawer";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatPoints } from "@/lib/numberUtils";
+import { getUserTimezone } from "@/lib/timezoneUtils";
 
 // ─── Create Room Drawer ──────────────────────────────────────
 function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => void }) {
@@ -35,6 +36,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
       userId,
       pointLimit: (parseFloat(form.pointLimit as string) || 0) > 0 ? parseFloat(form.pointLimit as string) : undefined,
       pointLimitPeriod: (parseFloat(form.pointLimit as string) || 0) > 0 ? form.pointLimitPeriod : undefined,
+      timezone: getUserTimezone(),
     });
     setCurrentRoomId(room.id);
     onClose();

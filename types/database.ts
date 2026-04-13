@@ -235,6 +235,8 @@ export type Database = {
           point_limit: number | null
           point_limit_period: string | null
           recurrent_cooldown_days: number | null
+          restrict_new_cycle_claims: boolean
+          timezone: string
         }
         Insert: {
           contribution_per_member?: number
@@ -252,6 +254,8 @@ export type Database = {
           point_limit?: number | null
           point_limit_period?: string | null
           recurrent_cooldown_days?: number | null
+          restrict_new_cycle_claims?: boolean
+          timezone?: string
         }
         Update: {
           contribution_per_member?: number
@@ -269,6 +273,8 @@ export type Database = {
           point_limit?: number | null
           point_limit_period?: string | null
           recurrent_cooldown_days?: number | null
+          restrict_new_cycle_claims?: boolean
+          timezone?: string
         }
         Relationships: []
       }
@@ -415,7 +421,10 @@ export type Database = {
         Args: { p_count?: number; p_start_date?: string; p_template_id: string }
         Returns: undefined
       }
-      get_current_cycle_start: { Args: { p_room_id: string }; Returns: string }
+      get_current_cycle_start: {
+        Args: { p_room_id: string; p_timezone?: string }
+        Returns: string
+      }
       get_user_point_status: {
         Args: { p_room_id: string; p_user_id: string }
         Returns: Json

@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, format } from 'date-fns';
 import { enUS, es } from 'date-fns/locale';
+import { getDayOfWeekInTimezone, getLocalMidnight } from './timezoneUtils';
 
 export function formatTaskDate(dateValue: string | Date, language: 'en' | 'es'): string {
   const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
@@ -38,14 +39,21 @@ export function formatTaskDate(dateValue: string | Date, language: 'en' | 'es'):
   return format(dateMidnight, 'EEEE', { locale });
 }
 
-/** Returns the UTC midnight Date that marks the end of the current cycle. */
+/**
+ * Returns the UTC Date that marks the end of the current cycle.
+ *
+ * @param timezone IANA timezone string for the room (e.g. "America/Argentina/Buenos_Aires").
+ *   Defaults to 'UTC'. All members of a room share the same timezone so cycle boundaries
+ *   are identical for everyone — this must be the ROOM's timezone, not the viewer's.
+ */
 export function computeCycleCutoff(
   periodStartIso: string,
   periodDurationDays: number,
   cycleMode: 'count' | 'weekday' | 'fixed_days',
   cyclesPerPeriod: number,
   cycleAnchorWeekday?: number | null,
-  cycleFixedDays?: number | null
+  cycleFixedDays?: number | null,
+  timezone: string = 'UTC'
 ): Date {
   const start = new Date(periodStartIso);
   const now = new Date();
@@ -57,56 +65,46 @@ export function computeCycleCutoff(
     const cycleDays = periodDurationDays / Math.max(cyclesPerPeriod || 1, 1);
     const startMs = start.getTime();
     const nowMs = now.getTime();
-    
-    // Find how many cycles have passed
-    // If now is before start, passedCycles will be negative
+    // count/fixed_days modes divide absolute time evenly — no timezone needed.
     const passedCycles = Math.floor((Math.max(nowMs, startMs) - startMs) / (cycleDays * 24 * 60 * 60 * 1000));
     cutoff = new Date(startMs + (passedCycles + 1) * cycleDays * 24 * 60 * 60 * 1000);
   } else if (cycleMode === 'fixed_days') {
     const cycleDays = Math.max(cycleFixedDays || 1, 1);
     const startMs = start.getTime();
     const nowMs = now.getTime();
-    
     const passedCycles = Math.floor((Math.max(nowMs, startMs) - startMs) / (cycleDays * 24 * 60 * 60 * 1000));
     cutoff = new Date(startMs + (passedCycles + 1) * cycleDays * 24 * 60 * 60 * 1000);
   } else if (cycleMode === 'weekday') {
-    // Start from today, find the next occurrence of cycleAnchorWeekday.
-    // If today is the anchor day, advance to next week.
-    const anchorDay = cycleAnchorWeekday || 0; // 0=Sun
-    const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const currentDay = nowMidnight.getDay(); // 0=Sun
-    
+    // Find the next occurrence of the anchor weekday in the ROOM's timezone.
+    // Using the room timezone ensures all members see the same cutoff moment.
+    const anchorDay = cycleAnchorWeekday ?? 0; // 0=Sun
+    const nowMidnight = getLocalMidnight(now, timezone);
+    const currentDay = getDayOfWeekInTimezone(now, timezone);
+
     let diff = anchorDay - currentDay;
     if (diff <= 0) {
-      diff += 7; // So if today is the anchor day (diff=0), it becomes 7
+      diff += 7; // if today IS the anchor day (diff=0) advance a full week
     }
-    
+
     cutoff = new Date(nowMidnight.getTime() + diff * 24 * 60 * 60 * 1000);
   } else {
-    // fallback
     cutoff = periodEnd;
   }
 
-  // Clamp cutoff to periodEnd if it exceeds it
-  if (cutoff > periodEnd) {
-    return periodEnd;
-  }
-  // Ensure it's not before period start
-  if (cutoff < start) {
-    return start;
-  }
-  
+  if (cutoff > periodEnd) return periodEnd;
+  if (cutoff < start) return start;
   return cutoff;
 }
 
-/** Returns the UTC midnight Date that marks the start of the current cycle. */
+/** Returns the UTC Date that marks the start of the current cycle. */
 export function computeCycleStart(
   periodStartIso: string,
   periodDurationDays: number,
   cycleMode: 'count' | 'weekday' | 'fixed_days',
   cyclesPerPeriod: number,
   cycleAnchorWeekday?: number | null,
-  cycleFixedDays?: number | null
+  cycleFixedDays?: number | null,
+  timezone: string = 'UTC'
 ): Date {
   const cutoff = computeCycleCutoff(
     periodStartIso,
@@ -114,7 +112,8 @@ export function computeCycleStart(
     cycleMode,
     cyclesPerPeriod,
     cycleAnchorWeekday,
-    cycleFixedDays
+    cycleFixedDays,
+    timezone
   );
 
   const start = new Date(periodStartIso);
@@ -141,7 +140,13 @@ export function computeCycleStart(
   return cycleStart;
 }
 
-/** Returns the UTC midnight Date that marks the start of the current point limit period. */
+/**
+ * Returns the UTC Date that marks the start of the current point limit period.
+ *
+ * @param timezone IANA timezone string for the room. Used to calculate the
+ *   correct "local midnight" for daily limits and to pass through to cycle
+ *   calculations for cycle-based limits.
+ */
 export function computePointLimitStart(
   periodStartIso: string,
   pointLimitPeriod: 'day' | 'week' | 'month' | 'cycle' | null | undefined,
@@ -149,7 +154,8 @@ export function computePointLimitStart(
   cycleMode: 'count' | 'weekday' | 'fixed_days',
   cyclesPerPeriod: number,
   cycleAnchorWeekday?: number | null,
-  cycleFixedDays?: number | null
+  cycleFixedDays?: number | null,
+  timezone: string = 'UTC'
 ): Date {
   const now = new Date();
   const start = new Date(periodStartIso);
@@ -157,19 +163,21 @@ export function computePointLimitStart(
   const nowMs = now.getTime();
 
   if (pointLimitPeriod === 'day') {
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // Use room midnight, not browser midnight, so the limit resets at the same
+    // absolute instant for every member.
+    return getLocalMidnight(now, timezone);
   }
-  
+
   if (pointLimitPeriod === 'week') {
     const elapsedWeeks = Math.floor((Math.max(nowMs, startMs) - startMs) / (7 * 24 * 60 * 60 * 1000));
     return new Date(startMs + elapsedWeeks * 7 * 24 * 60 * 60 * 1000);
   }
-  
+
   if (pointLimitPeriod === 'month') {
     const elapsedMonths = Math.floor((Math.max(nowMs, startMs) - startMs) / (30 * 24 * 60 * 60 * 1000));
     return new Date(startMs + elapsedMonths * 30 * 24 * 60 * 60 * 1000);
   }
-  
+
   if (pointLimitPeriod === 'cycle') {
     return computeCycleStart(
       periodStartIso,
@@ -177,9 +185,10 @@ export function computePointLimitStart(
       cycleMode,
       cyclesPerPeriod,
       cycleAnchorWeekday,
-      cycleFixedDays
+      cycleFixedDays,
+      timezone
     );
   }
-  
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return getLocalMidnight(now, timezone);
 }

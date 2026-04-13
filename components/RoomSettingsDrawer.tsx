@@ -5,6 +5,7 @@ import { DraggableDrawer } from "./DraggableDrawer";
 import { useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useTranslation } from "@/hooks/useTranslation";
 import { computeCycleCutoff } from "@/lib/dateUtils";
+import { getUserTimezone, getCuratedTimezones } from "@/lib/timezoneUtils";
 import { format } from "date-fns";
 import { enUS, es } from "date-fns/locale";
 
@@ -79,6 +80,9 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
     cycleAnchorWeekday: room.cycle_anchor_weekday ?? 1, // 1=Mon default
     cycleFixedDays: String(room.cycle_fixed_days || 7),
     restrictNewCycleClaims: room.restrict_new_cycle_claims || false,
+    // Default to admin's browser timezone if the room still has the DB default ('UTC').
+    // This makes new rooms automatically match the admin's locale.
+    timezone: (room.timezone && room.timezone !== 'UTC') ? room.timezone : getUserTimezone(),
     seasonStartDate: (() => {
       const d = new Date(room.current_period_start_date || new Date());
       return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
@@ -95,7 +99,8 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
         form.cycleMode as any,
         parseInt(form.cyclesPerPeriod) || 2,
         form.cycleAnchorWeekday,
-        parseInt(form.cycleFixedDays) || 7
+        parseInt(form.cycleFixedDays) || 7,
+        form.timezone
       )
     : null;
 
@@ -131,6 +136,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
           cycle_anchor_weekday: form.cycleAnchorWeekday,
           cycle_fixed_days: parseInt(form.cycleFixedDays) || 7,
           restrict_new_cycle_claims: form.restrictNewCycleClaims,
+          timezone: form.timezone,
         } as any,
       });
       onClose();
@@ -410,6 +416,50 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
           <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">{t("cooldown_description")}</p>
         </div>
 
+        {/* 7 – Timezone */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <SectionLabel
+              label={t("timezone" as any)}
+              info={t("info_timezone" as any)}
+              align="left"
+            />
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, timezone: getUserTimezone() })}
+              className="text-[10px] font-bold uppercase tracking-wider text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 px-2.5 py-1 rounded-lg transition-colors flex-shrink-0"
+            >
+              {t("timezone_use_mine" as any)}
+            </button>
+          </div>
+          <div className="relative flex items-center gap-2 bg-slate-900/40 hover:bg-slate-900/60 transition-colors rounded-xl px-3 py-2 border border-white/5 group">
+            <svg className="w-4 h-4 text-brand-400/80 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+            </svg>
+            <select
+              value={form.timezone}
+              onChange={(e) => setForm({ ...form, timezone: e.target.value })}
+              className="flex-1 bg-transparent text-sm font-semibold text-white focus:outline-none appearance-none cursor-pointer truncate pr-8"
+            >
+              {getCuratedTimezones().map(tz => (
+                <option key={tz.value} value={tz.value} className="bg-slate-900 text-white font-sans">
+                  {tz.label}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-slate-500 group-hover:text-brand-300 transition-colors">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 15L12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+              </svg>
+            </div>
+          </div>
+          {form.timezone !== getUserTimezone() && (
+            <p className="text-[10px] text-amber-400/80 mt-2 leading-relaxed">
+              {t("timezone_differs_warning" as any).replace("{tz}", getUserTimezone())}
+            </p>
+          )}
+        </div>
+
         {/* Save */}
         <div className="pt-2">
           <button
@@ -420,6 +470,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
             {updateRoom.isPending ? t("saving") : t("save_settings")}
           </button>
         </div>
+
       </form>
     </DraggableDrawer>
   );

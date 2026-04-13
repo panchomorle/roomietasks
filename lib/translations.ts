@@ -170,6 +170,11 @@ export const translations = {
     info_point_limit: "Cap how many points a member can earn per period, to keep things fair.",
     info_cycles: "Cycles divide each season into shorter rounds. Tasks reset at the start of each cycle so everyone has a chance to earn points regularly.",
     info_cooldown: "How long a member must wait after completing a repeating task before they can claim it again.",
+    timezone: "Timezone",
+    info_timezone: "Used to calculate cycle boundaries (e.g. when 'Monday' starts). All room members share this timezone. Defaults to the admin's browser timezone.",
+    timezone_use_mine: "Use mine",
+    timezone_differs_warning: "⚠ This differs from your browser timezone ({tz}).",
+    timezone_placeholder: "e.g. America/New_York",
     cycles_per_season: "Cycles per season",
     error_saving_settings: "Failed to save settings. Please try again.",
 
@@ -436,6 +441,11 @@ export const translations = {
     info_point_limit: "Limita cuántos puntos puede ganar un miembro por período, para mantener la equidad.",
     info_cycles: "Los ciclos dividen la temporada en rondas más cortas. Las tareas se reinician al inicio de cada ciclo.",
     info_cooldown: "Cuánto tiempo debe esperar un miembro después de completar una tarea recurrente antes de reclamarla de nuevo.",
+    timezone: "Zona Horaria",
+    info_timezone: "Determina cuándo comienzan los ciclos (por ejemplo, cuándo empieza el 'lunes'). Todos los miembros comparten esta zona horaria. Por defecto, usa la zona horaria del administrador.",
+    timezone_use_mine: "Usar la mía",
+    timezone_differs_warning: "⚠ Difiere de la zona horaria de tu navegador ({tz}).",
+    timezone_placeholder: "ej. America/Argentina/Buenos_Aires",
     cycles_per_season: "Ciclos por temporada",
     error_saving_settings: "Error al guardar los ajustes. Por favor, inténtalo de nuevo.",
 

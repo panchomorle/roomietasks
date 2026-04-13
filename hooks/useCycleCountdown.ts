@@ -40,7 +40,8 @@ export function useCycleCountdown(room: any): CycleCountdown {
         room.cycle_mode,
         room.cycles_per_period,
         room.cycle_anchor_weekday,
-        room.cycle_fixed_days
+        room.cycle_fixed_days,
+        room.timezone || 'UTC'
       );
 
       const now = new Date();
@@ -77,7 +78,8 @@ export function useCycleCountdown(room: any): CycleCountdown {
     room?.cycle_mode,
     room?.cycles_per_period,
     room?.cycle_anchor_weekday,
-    room?.cycle_fixed_days
+    room?.cycle_fixed_days,
+    room?.timezone
   ]);
 
   return timeLeft;

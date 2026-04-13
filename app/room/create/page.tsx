@@ -6,6 +6,7 @@ import { useCreateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useRouter } from "next/navigation";
 import { useSetAtom } from "jotai";
 import { currentRoomIdAtom } from "@/store/atoms";
+import { getUserTimezone } from "@/lib/timezoneUtils";
 
 export default function CreateRoomPage() {
   const { user } = useAuth();
@@ -28,6 +29,7 @@ export default function CreateRoomPage() {
       contributionPerMember: form.contributionPerMember,
       periodDurationDays: form.periodDurationDays,
       userId: user.id,
+      timezone: getUserTimezone(),
     });
 
     setCurrentRoomId(room.id);

@@ -327,6 +327,7 @@ export function useCreateRoom() {
       userId,
       pointLimit,
       pointLimitPeriod,
+      timezone,
     }: {
       name: string;
       contributionPerMember: number;
@@ -334,6 +335,7 @@ export function useCreateRoom() {
       userId: string;
       pointLimit?: number;
       pointLimitPeriod?: string;
+      timezone?: string;
     }) => {
       const { data: room, error: roomError } = await supabase
         .from("rooms")
@@ -344,6 +346,7 @@ export function useCreateRoom() {
           created_by: userId,
           point_limit: pointLimit,
           point_limit_period: pointLimitPeriod,
+          timezone: timezone || 'UTC',
         })
         .select()
         .single();
@@ -481,9 +484,16 @@ export function useUpdateRoom() {
         name?: string;
         contribution_per_member?: number;
         period_duration_days?: number;
+        current_period_start_date?: string;
         point_limit?: number | null;
         point_limit_period?: string | null;
+        recurrent_cooldown_days?: number;
+        cycle_mode?: string;
+        cycles_per_period?: number;
+        cycle_anchor_weekday?: number;
+        cycle_fixed_days?: number;
         restrict_new_cycle_claims?: boolean;
+        timezone?: string;
       };
     }) => {
       const { data, error } = await supabase

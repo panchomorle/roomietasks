@@ -911,7 +911,8 @@ export default function TasksPage() {
       (room.cycle_mode as 'count' | 'weekday' | 'fixed_days') || 'count',
       room.cycles_per_period || 1,
       room.cycle_anchor_weekday,
-      room.cycle_fixed_days
+      room.cycle_fixed_days,
+      room.timezone || 'UTC'
     );
 
     const current: any[] = [];
@@ -952,7 +953,8 @@ export default function TasksPage() {
     room.cycle_mode as any,
     room.cycles_per_period,
     room.cycle_anchor_weekday,
-    room.cycle_fixed_days
+    room.cycle_fixed_days,
+    room.timezone || 'UTC'
   ) : undefined;
 
   const limitStart = room ? computePointLimitStart(
@@ -962,7 +964,8 @@ export default function TasksPage() {
     room.cycle_mode as any,
     room.cycles_per_period,
     room.cycle_anchor_weekday,
-    room.cycle_fixed_days
+    room.cycle_fixed_days,
+    room.timezone || 'UTC'
   ) : undefined;
 
   const { data: userPoints = 0 } = useUserCyclePoints(
