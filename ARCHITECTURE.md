@@ -40,10 +40,15 @@
   - \`get_user_point_status(p_room_id uuid, p_user_id uuid) -> jsonb\`: Summarizes a user's current point status, earnings, and limits for the cycle.
   - \`handle_new_user() -> trigger\`: Automatically creates profile entries upon Supabase Auth user signup.
   - \`handle_task_completion() -> trigger\`: Hook used to trigger related updates upon task completion. 
-  - \`is_room_admin(p_room_id uuid) -> boolean\`: Security definer logic; checks if the calling user has the admin role in a given room.
-  - \`is_room_member(p_room_id uuid) -> boolean\`: Security definer logic; checks if the calling user is a member of a given room.
-  - \`rls_auto_enable() -> event_trigger\`: Utility for automatically ensuring RLS stays enabled on new tables.
-  - \`webhook_notify_task_completed() -> trigger\`: Dispatches notifications to Edge Functions/services when a task is finished.
+  - `is_room_admin(p_room_id uuid) -> boolean`: Security definer logic; checks if the calling user has the admin role in a given room.
+  - `is_room_member(p_room_id uuid) -> boolean`: Security definer logic; checks if the calling user is a member of a given room.
+  - `rls_auto_enable() -> event_trigger`: Utility for automatically ensuring RLS stays enabled on new tables.
+  - `unclaim_task_instance(p_task_id uuid) -> jsonb`: Restores a declined task's reward to its original template value, preventing degraded points caused by previous limit checks.
+  - `webhook_notify_task_completed() -> trigger`: Dispatches notifications to Edge Functions/services when a task is finished.
+
+### 5. Type Safety & Database Synchronization
+- The application relies on Supabase's auto-generated types to ensure strict typing across RPCs and queries.
+- **Workflow Requirement**: Whenever a change is made to the database schema (adding tables, altering columns, modifying RPC signatures), developers must execute `npm run generate:types`. This executes the Supabase CLI to introspect the remote database and rewrite the definitions automatically, guaranteeing frontend sync.
 
 > [!IMPORTANT]
 > **Point Type Precision**: Always use \`numeric\` (PostgreSQL) or \`number\` (TypeScript) for point calculations. Avoid \`integer\` variables in RPCs, as they will round fractional rewards (like 0.5) to the nearest whole number.

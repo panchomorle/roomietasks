@@ -47,12 +47,12 @@ export function useUnclaimTask() {
 
   return useMutation({
     mutationFn: async ({ taskId }: { taskId: string }) => {
-      const { error } = await supabase
-        .from("task_instances")
-        .update({ assigned_user_id: null })
-        .eq("id", taskId);
+      const { data, error } = await supabase.rpc("unclaim_task_instance", {
+        p_task_id: taskId,
+      });
 
       if (error) throw error;
+      if (data && !data.success) throw new Error(data.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task-instances"] });

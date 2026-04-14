@@ -71,3 +71,15 @@ This document tracks significant design choices made during the development of R
   - Webhook edge function (`notify-task-completed`) fetches all *other* room members and invoked `send-push` in a loop.
   - `send-push` uses the `web-push` library to encrypt the payload and dispatch it to the browser's push service. It also automatically scrubs expired subscriptions (`404` or `410` status from the push endpoint). 
 **Key Rotation**: To rotate VAPID keys, generate a new pair (`npx web-push generate-vapid-keys`), update `.env.local` for the client, and update the Supabase project secrets (`NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`). Existing subscriptions will require users to re-subscribe.
+
+## 11. Room-Level Timezone Authority
+**Decision**: Assigned a `timezone` column to `rooms` (defaulting to the admin's local timezone on creation) to dictate global reset boundaries, while keeping `timezone` on individual `profiles`.
+**Reasoning**: 
+- **Fairness**: A room limit/cycle MUST reset at the exact same physical moment for all members. If two roommates travel to different timezones, "midnight" should process concurrently so no one can "game" the point limits by changing their local OS clock.
+- **Personalization**: `profiles.timezone` is retained so that scheduled web push notifications (like daily morning reminders) can be delivered relative to the user's *actual* physical location. 
+
+## 12. Automated Type Synchronization
+**Decision**: Required the use of `npm run generate:types` utilizing the Supabase CLI (`supabase gen types typescript`).
+**Reasoning**:
+- Hand-writing interfaces for complicated RPC returns and schemas invites subtle client-side crashes if the DB API diverges from frontend expectations.
+- Running this command acts as the source of truth bridge whenever structural database changes (tables, columns, or RPC functions) occur.
