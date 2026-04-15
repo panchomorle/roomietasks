@@ -12,6 +12,8 @@ interface PointLimitModalProps {
   details?: any;
   taskId?: string;
   userId?: string;
+  /** Indicates which RPC triggered the error, so the correct force-action is used. Defaults to 'complete'. */
+  action?: "claim" | "complete";
 }
 
 export function PointLimitModal({
@@ -21,6 +23,7 @@ export function PointLimitModal({
   details,
   taskId,
   userId,
+  action = "complete",
 }: PointLimitModalProps) {
   const { t, language } = useTranslation();
   const unclaimTask = useUnclaimTask();
@@ -149,13 +152,23 @@ export function PointLimitModal({
             </>
           ) : isPointLimit ? (
             <>
-              <button
-                onClick={handleCompleteAnyway}
-                disabled={completeTask.isPending}
-                className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
-              >
-                {completeTask.isPending ? (t("completing") || "Completing...") : (t("complete_anyway") || "Complete Anyway")}
-              </button>
+              {action === "claim" ? (
+                <button
+                  onClick={handleClaimAnyway}
+                  disabled={claimTask.isPending}
+                  className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
+                >
+                  {claimTask.isPending ? t("claiming") : t("claim_anyway")}
+                </button>
+              ) : (
+                <button
+                  onClick={handleCompleteAnyway}
+                  disabled={completeTask.isPending}
+                  className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-lg transition-colors shadow-lg shadow-brand-500/20"
+                >
+                  {completeTask.isPending ? (t("completing") || "Completing...") : (t("complete_anyway") || "Complete Anyway")}
+                </button>
+              )}
               <button
                 onClick={handleGiveUp}
                 disabled={unclaimTask.isPending}

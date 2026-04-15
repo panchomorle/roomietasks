@@ -34,6 +34,13 @@ This document tracks significant design choices made during the development of R
 - Elevates the visual quality to a premium aesthetic (glassmorphism/Tailwind components).
 - Allows the injection of detailed context before a permanent action (e.g., showing exact point breakdowns and tasks completed before ending the season).
 
+**`PointLimitModal` – Critical Implementation Note**:
+The `PointLimitModal` handles errors from **two separate RPCs** (`claim_task_instance` and `complete_task_instance`), both of which can return `point_limit_exceeded`. The `action` prop (`"claim"` | `"complete"`) **must always be passed** and must match the operation that triggered the error:
+- `action="claim"` → the "force" button calls `claimAnyway` (re-invokes claim with `p_force: true`).
+- `action="complete"` → the "force" button calls `completeAnyway` (re-invokes complete with `p_force: true`).
+
+Failing to include `point_limit_exceeded` in `handleClaim`'s error checks (or omitting the `action` prop) will cause a raw `alert()` to appear instead of the modal. Both `handleClaim` and `handleComplete` in `TaskCard` must catch this code.
+
 ## 6. Fractional Points Support
 **Decision**: Switched from implicit integer point handling in Supabase RPCs to explicit `numeric` types for all point-related calculations.
 **Reasoning**: 
