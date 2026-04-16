@@ -23,29 +23,8 @@ export function useClaimTask() {
         p_force: force,
       });
 
-      // Known business-logic codes that the RPC raises as PostgreSQL exceptions.
-      // In this case Supabase returns a PostgrestError where .message is the error
-      // code string and .code is the generic PostgreSQL SQLSTATE (e.g. "P0001"),
-      // NOT the business-logic code the UI checks. We normalise them here so that
-      // the catch blocks in the UI components can always use err.code reliably.
-      const KNOWN_CLAIM_CODES = [
-        "point_limit_exceeded",
-        "claim_limit_warning",
-        "claim_cooldown_active",
-        "claim_not_current_cycle",
-        "too_early",
-      ];
-
-      if (error) {
-        if (error.message && KNOWN_CLAIM_CODES.includes(error.message)) {
-          const err = new Error(error.message);
-          (err as any).code = error.message;
-          (err as any).details = (error as any).details ?? error;
-          throw err;
-        }
-        throw error;
-      }
-
+      if (error) throw error;
+      
       const result = data as any;
       if (result && !result.success) {
         const err = new Error(result.message || result.error);
@@ -73,7 +52,8 @@ export function useUnclaimTask() {
       });
 
       if (error) throw error;
-      if (data && !data.success) throw new Error(data.error);
+      const result = data as any;
+      if (result && !result.success) throw new Error(result.error);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["task-instances"] });
@@ -93,20 +73,7 @@ export function useCompleteTask() {
         p_force: force,
       });
 
-      // Same normalisation as useClaimTask: complete_task_instance may also RAISE
-      // EXCEPTION with the business-logic code as the message, yielding a
-      // PostgrestError with .message = "point_limit_exceeded" but .code = "P0001".
-      const KNOWN_COMPLETE_CODES = ["point_limit_exceeded", "too_early"];
-
-      if (error) {
-        if (error.message && KNOWN_COMPLETE_CODES.includes(error.message)) {
-          const err = new Error(error.message);
-          (err as any).code = error.message;
-          (err as any).details = (error as any).details ?? error;
-          throw err;
-        }
-        throw error;
-      }
+      if (error) throw error;
       
       const result = data as any;
       if (result && !result.success) {

@@ -35,16 +35,12 @@ This document tracks significant design choices made during the development of R
 - Allows the injection of detailed context before a permanent action (e.g., showing exact point breakdowns and tasks completed before ending the season).
 
 **`PointLimitModal` – Critical Implementation Note**:
-The `PointLimitModal` handles errors from **two separate RPCs** (`claim_task_instance` and `complete_task_instance`), both of which can return `point_limit_exceeded`. The `action` prop (`"claim"` | `"complete"`) **must always be passed** and must match the operation that triggered the error:
+The `PointLimitModal` handles errors from **two separate RPCs** (`claim_task_instance` and `complete_task_instance`), both of which can return `point_limit_exceeded` as a JSONB payload (`{ success: false, error: "point_limit_exceeded", ... }`). The `action` prop (`"claim"` | `"complete"`) **must always be passed** and must match the operation that triggered the error:
 - `action="claim"` → the "force" button calls `claimAnyway` (re-invokes claim with `p_force: true`).
 - `action="complete"` → the "force" button calls `completeAnyway` (re-invokes complete with `p_force: true`).
 
-**PostgrestError vs JSONB — This Is The Key Bug Pattern**:
-These RPCs use `RAISE EXCEPTION` for hard blocks (e.g. `point_limit_exceeded`). When a PostgreSQL `RAISE EXCEPTION` fires, Supabase returns a **PostgrestError** (the `error` field from the RPC call), not a JSONB payload in `data`. The PostgrestError has:
-- `.message` = the exception message string (e.g. `"point_limit_exceeded"`)
-- `.code` = the PostgreSQL SQLSTATE code (e.g. `"P0001"`) — **NOT** the business-logic code
-
-The `useClaimTask` and `useCompleteTask` mutations in `hooks/mutations/useTaskMutations.ts` each contain a `KNOWN_*_CODES` list and an interception block at the `if (error)` branch that converts these PostgrestErrors into a structured `{ code, details }` error before throwing. **If a new error code is added to any RPC**, it must be added to the corresponding `KNOWN_*_CODES` array in the mutation hook, otherwise the UI will show a raw `alert()` with the error code as the message text.
+**Error Flow — How RPC Business Errors Reach The UI**:
+Both RPCs return JSONB. Business-logic errors come back as `{ data: { success: false, error: "<code>", ... }, error: null }`. The mutation hooks in `hooks/mutations/useTaskMutations.ts` convert `data.error` into a thrown `Error` with `err.code = data.error` and `err.details = data`. The `handleClaim` and `handleComplete` catch blocks in `TaskCard` (`app/dashboard/page.tsx`) must each list **every** `err.code` value they need to intercept — any code not listed will fall through to the generic `alert(err.message)` fallback and display the raw code string to the user.
 
 ## 6. Fractional Points Support
 **Decision**: Switched from implicit integer point handling in Supabase RPCs to explicit `numeric` types for all point-related calculations.
