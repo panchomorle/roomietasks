@@ -92,8 +92,8 @@ export function PointLimitModal({
                 .replace("{limit}", details?.limit || "0")}
               <br/><br/>
               {t("current_status")
-                .replace("{earned}", details?.current || "0")
-                .replace("{assigned}", "0")}
+                .replace("{earned}", details?.earned ?? details?.current ?? "0")
+                .replace("{assigned}", details?.assigned ?? "0")}
             </>
           ) : isClaimWarning ? (
             <>
