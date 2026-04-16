@@ -39,7 +39,12 @@ The `PointLimitModal` handles errors from **two separate RPCs** (`claim_task_ins
 - `action="claim"` → the "force" button calls `claimAnyway` (re-invokes claim with `p_force: true`).
 - `action="complete"` → the "force" button calls `completeAnyway` (re-invokes complete with `p_force: true`).
 
-Failing to include `point_limit_exceeded` in `handleClaim`'s error checks (or omitting the `action` prop) will cause a raw `alert()` to appear instead of the modal. Both `handleClaim` and `handleComplete` in `TaskCard` must catch this code.
+**PostgrestError vs JSONB — This Is The Key Bug Pattern**:
+These RPCs use `RAISE EXCEPTION` for hard blocks (e.g. `point_limit_exceeded`). When a PostgreSQL `RAISE EXCEPTION` fires, Supabase returns a **PostgrestError** (the `error` field from the RPC call), not a JSONB payload in `data`. The PostgrestError has:
+- `.message` = the exception message string (e.g. `"point_limit_exceeded"`)
+- `.code` = the PostgreSQL SQLSTATE code (e.g. `"P0001"`) — **NOT** the business-logic code
+
+The `useClaimTask` and `useCompleteTask` mutations in `hooks/mutations/useTaskMutations.ts` each contain a `KNOWN_*_CODES` list and an interception block at the `if (error)` branch that converts these PostgrestErrors into a structured `{ code, details }` error before throwing. **If a new error code is added to any RPC**, it must be added to the corresponding `KNOWN_*_CODES` array in the mutation hook, otherwise the UI will show a raw `alert()` with the error code as the message text.
 
 ## 6. Fractional Points Support
 **Decision**: Switched from implicit integer point handling in Supabase RPCs to explicit `numeric` types for all point-related calculations.
