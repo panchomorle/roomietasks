@@ -6,9 +6,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTaskInstances } from "@/hooks/queries/useTasks";
 import { useRoom, useRoomMembers } from "@/hooks/queries/useRooms";
 import { useClaimTask, useUnclaimTask, useCompleteTask, useCreateTaskTemplate, useDeleteTask, useEditTaskTemplate } from "@/hooks/mutations/useTaskMutations";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
-import { PointLimitModal } from "@/components/PointLimitModal";
+import { PointLimitModal, DeleteTaskModal, GenericErrorModal } from "@/components/modals";
 
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -28,12 +28,18 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
   const deleteTask = useDeleteTask();
   const [showOptions, setShowOptions] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [errorModal, setErrorModal] = useState<{ isOpen: boolean; type: "point_limit_exceeded" | "too_early" | "claim_limit_warning" | "claim_cooldown_active" | "claim_not_current_cycle"; details?: any; action?: "claim" | "complete" } | null>(null);
+  const [genericError, setGenericError] = useState<string | null>(null);
+  const optionsRef = useRef<HTMLDivElement>(null);
 
   const handleClaim = async () => {
     try {
       await claimTask.mutateAsync({ taskId: task.id, userId });
     } catch (err: any) {
+      // Normalize "future_cycle" (RPC alias) to the UI-facing code
+      if (err.code === "future_cycle") err.code = "claim_not_current_cycle";
+
       if (err.code === "point_limit_exceeded" || err.code === "claim_limit_warning" || err.code === "claim_cooldown_active" || err.code === "claim_not_current_cycle") {
         setErrorModal({
           isOpen: true,
@@ -42,7 +48,7 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
           action: "claim",
         });
       } else {
-        alert(err.message || "Failed to claim task");
+        setGenericError(err.message || "Failed to claim task");
       }
     }
   };
@@ -59,10 +65,21 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
           action: "complete",
         });
       } else {
-        alert(err.message || "Failed to complete task");
+        setGenericError(err.message || "Failed to complete task");
       }
     }
   };
+
+  useEffect(() => {
+    if (!showOptions) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(e.target as Node)) {
+        setShowOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showOptions]);
 
   const isAssigned = !!task.assigned_user_id;
   const isAssignedToMe = task.assigned_user_id === userId;
@@ -77,7 +94,7 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
 
   return (
     <>
-      <div className="group relative bg-white/[0.04] active:bg-white/[0.08] sm:hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl p-4 sm:p-5 transition-all duration-200 animate-fade-in shadow-sm">
+      <div className={`group relative bg-white/[0.04] active:bg-white/[0.08] sm:hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl p-4 sm:p-5 transition-all duration-200 animate-fade-in shadow-sm ${showOptions ? "z-30" : ""}`}>
         <div className="flex items-start justify-between gap-3 sm:gap-4 pr-6">
           <div className="flex-1 min-w-0">
             <h3 className="text-white font-semibold text-[15px] sm:text-base leading-snug">{task.title}</h3>
@@ -129,7 +146,7 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
         </div>
 
         {/* Options Menu */}
-        <div className="absolute top-3 right-2 sm:top-4 sm:right-3">
+        <div ref={optionsRef} className="absolute top-3 right-2 sm:top-4 sm:right-3">
           <button
             onClick={() => setShowOptions(!showOptions)}
             className="p-1.5 text-slate-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
@@ -140,10 +157,6 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
           </button>
           {showOptions && (
             <>
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setShowOptions(false)} 
-              />
               <div className="absolute right-0 mt-1 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-xl z-50 overflow-hidden animate-fade-in">
                 <button
                   onClick={() => {
@@ -158,10 +171,8 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
                 {isAdmin && (
                   <button
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this task instance?")) {
-                        deleteTask.mutate({ taskId: task.id });
-                      }
                       setShowOptions(false);
+                      setShowDeleteModal(true);
                     }}
                     disabled={deleteTask.isPending}
                     className="w-full text-left px-4 py-3 text-sm text-danger hover:bg-danger/10 transition-colors flex items-center gap-2 border-t border-white/5"
@@ -197,6 +208,17 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
         />
       )}
 
+      <DeleteTaskModal
+        isOpen={showDeleteModal}
+        taskTitle={task.title}
+        isPending={deleteTask.isPending}
+        onConfirm={() => {
+          deleteTask.mutate({ taskId: task.id });
+          setShowDeleteModal(false);
+        }}
+        onClose={() => setShowDeleteModal(false)}
+      />
+
       {errorModal && (
         <PointLimitModal
           isOpen={errorModal.isOpen}
@@ -208,6 +230,12 @@ function TaskCard({ task, userId, isAdmin, pointLimit }: { task: any; userId: st
           action={errorModal.action}
         />
       )}
+
+      <GenericErrorModal
+        isOpen={!!genericError}
+        message={genericError ?? ""}
+        onClose={() => setGenericError(null)}
+      />
     </>
   );
 }

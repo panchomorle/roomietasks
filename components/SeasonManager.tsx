@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRooms } from "@/hooks/queries/useRooms";
 import { useEndPeriod } from "@/hooks/mutations/useTaskMutations";
-import { EndSeasonModal } from "./EndSeasonModal";
+import { EndSeasonModal } from "@/components/modals";
 import { Tables } from "@/types/database";
 
 type Room = Tables<"rooms">;

@@ -6,7 +6,7 @@ import { useRoom, useRoomMembers, useRoomTrophies } from "@/hooks/queries/useRoo
 import { useLeaderboard } from "@/hooks/queries/useTasks";
 import { useEndPeriod, useRemoveMember, useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useAuth } from "@/hooks/useAuth";
-import { EndSeasonModal } from "@/components/EndSeasonModal";
+import { EndSeasonModal, DeleteTaskModal } from "@/components/modals";
 import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -34,6 +34,7 @@ export default function LeaderboardPage() {
   const [editContribution, setEditContribution] = useState("");
   const [editDuration, setEditDuration] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
+  const [kickConfirm, setKickConfirm] = useState<{ userId: string; name: string } | null>(null);
 
   if (!roomId || roomLoading || membersLoading || trophiesLoading) {
     return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto" /></div>;
@@ -277,11 +278,7 @@ export default function LeaderboardPage() {
                     {/* Admin Kick Action */}
                     {isAdmin && !isMe && (
                       <button
-                        onClick={() => {
-                          if (window.confirm(`Are you sure you want to remove ${entry.fullName} from the room? They will lose access immediately.`)) {
-                            removeMember.mutate({ roomId, userIdToRemove: entry.userId });
-                          }
-                        }}
+                        onClick={() => setKickConfirm({ userId: entry.userId, name: entry.fullName })}
                         disabled={removeMember.isPending}
                         className="p-2 text-slate-500 hover:text-danger active:text-danger hover:bg-danger/10 rounded-xl transition-colors disabled:opacity-50"
                         title="Remove member"
@@ -322,6 +319,22 @@ export default function LeaderboardPage() {
           />
         </>
       )}
+
+      <DeleteTaskModal
+        isOpen={!!kickConfirm}
+        taskTitle={kickConfirm?.name ?? ""}
+        isPending={removeMember.isPending}
+        overrideTitle={t("remove_member_title")}
+        overrideDescription={t("remove_member_desc").replace("{name}", kickConfirm?.name ?? "")}
+        overrideConfirmLabel={t("remove_member_confirm")}
+        onConfirm={() => {
+          if (kickConfirm) {
+            removeMember.mutate({ roomId, userIdToRemove: kickConfirm.userId });
+          }
+          setKickConfirm(null);
+        }}
+        onClose={() => setKickConfirm(null)}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { SeasonManager } from "@/components/SeasonManager";
-import { NotificationPromptModal } from "@/components/NotificationPromptModal";
+import { NotificationPromptModal } from "@/components/modals";
 import { useTranslation } from "@/hooks/useTranslation";
 import { createClient } from "@/lib/supabase/client";
 
