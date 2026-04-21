@@ -9,6 +9,7 @@ import { formatPoints } from "@/lib/numberUtils";
 import { useAtomValue } from "jotai";
 import { currentRoomIdAtom } from "@/store/atoms";
 import { useRoom } from "@/hooks/queries/useRooms";
+import { useRouter } from "next/navigation";
 
 interface TaskDetailsDrawerProps {
   task: any | null;
@@ -19,6 +20,7 @@ export function TaskDetailsDrawer({ task, onClose }: TaskDetailsDrawerProps) {
   const { t, language } = useTranslation();
   const roomId = useAtomValue(currentRoomIdAtom);
   const { data: room } = useRoom(roomId);
+  const router = useRouter();
 
   if (!task) return null;
 
@@ -70,12 +72,21 @@ export function TaskDetailsDrawer({ task, onClose }: TaskDetailsDrawerProps) {
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
               {t("completed_by") || "Completed By"}
             </p>
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center text-[10px] font-bold text-brand-400">
+            <button
+              onClick={() => {
+                const completerId = task.completed_by_user_id;
+                if (completerId) {
+                  onClose();
+                  router.push(`/dashboard/profile/${completerId}`);
+                }
+              }}
+              className="flex items-center gap-2 hover:opacity-75 transition-opacity text-left w-full"
+            >
+              <div className="w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
                 {completerName.charAt(0).toUpperCase()}
               </div>
-              <p className="text-sm font-semibold text-white truncate">{completerName}</p>
-            </div>
+              <p className="text-sm font-semibold text-white truncate hover:text-brand-300 transition-colors">{completerName}</p>
+            </button>
             {task.completed_at && (
               <p className="text-xs text-slate-400 mt-1.5 capitalize">
                 {formatTaskDate(task.completed_at, language as 'en' | 'es')}

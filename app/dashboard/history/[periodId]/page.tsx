@@ -7,6 +7,7 @@ import { formatPoints } from "@/lib/numberUtils";
 import { formatSeasonLabel } from "@/lib/seasonLabel";
 import { ACHIEVEMENT_DEFS } from "@/lib/achievements";
 import type { AchievementKey } from "@/lib/achievements";
+import Link from "next/link";
 
 export default function SeasonDetailPage() {
   const params = useParams();
@@ -123,7 +124,12 @@ export default function SeasonDetailPage() {
               const { meta } = entry;
               const isFirst = meta.label === "1st";
               return (
-                <div key={entry.userId} className="flex flex-col items-center" style={{ width: meta.size }}>
+                <Link
+                  key={entry.userId}
+                  href={`/dashboard/profile/${entry.userId}`}
+                  className="flex flex-col items-center hover:opacity-80 transition-opacity"
+                  style={{ width: meta.size }}
+                >
                   {entry.avatarUrl ? (
                     <img
                       src={entry.avatarUrl}
@@ -146,7 +152,7 @@ export default function SeasonDetailPage() {
                   <div className={`w-full ${meta.height} ${meta.color} rounded-t-xl mt-2 flex items-center justify-center`}>
                     <span className={`text-xs font-black ${meta.textColor}`}>{meta.label}</span>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -184,7 +190,11 @@ export default function SeasonDetailPage() {
         <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">{t("prize_distribution")}</h3>
         <div className="space-y-1">
           {participants.map((entry, i) => (
-            <div key={entry.userId} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.03]">
+            <Link
+              key={entry.userId}
+              href={`/dashboard/profile/${entry.userId}`}
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/[0.04] transition-colors"
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <span className="w-5 text-xs font-bold text-slate-500 text-center flex-shrink-0">{i + 1}</span>
                 {entry.avatarUrl ? (
@@ -204,7 +214,7 @@ export default function SeasonDetailPage() {
               <p className={`text-sm font-bold flex-shrink-0 ${i === 0 && entry.points > 0 ? "text-success" : "text-slate-300"}`}>
                 ${entry.money.toFixed(2)}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

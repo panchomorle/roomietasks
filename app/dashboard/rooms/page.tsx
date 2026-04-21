@@ -434,7 +434,7 @@ function RoomCard({
 // ─── Main Rooms Page ─────────────────────────────────────────
 export default function RoomsPage() {
   const { t, language } = useTranslation();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { data: rooms, isLoading } = useRooms();
   const [currentRoomId, setCurrentRoomId] = useAtom(currentRoomIdAtom);
   const leaveRoom = useLeaveRoom();
@@ -457,44 +457,15 @@ export default function RoomsPage() {
     );
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/login");
-  };
-
   return (
     <div className="pb-10 pt-2">
-      {/* Header with Sign-Out */}
+      {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{t("your_rooms")}</h1>
           <p className="text-sm text-slate-500 mt-1">{t("manage_households")}</p>
         </div>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
-          <div className="flex items-center gap-3">
-            {user?.user_metadata?.avatar_url ? (
-              <img
-                src={user.user_metadata.avatar_url}
-                alt=""
-                className="w-9 h-9 rounded-full object-cover ring-2 ring-white/10"
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-brand-600/30 flex items-center justify-center text-brand-400 font-bold text-sm ring-2 ring-white/10">
-                {user?.email?.charAt(0).toUpperCase()}
-              </div>
-            )}
-            <button
-              onClick={handleSignOut}
-              className="p-2 text-slate-500 hover:text-danger active:text-danger hover:bg-danger/10 rounded-xl transition-colors"
-              title="Sign out"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        <LanguageSwitcher />
       </div>
 
       {/* Big Action Cards */}

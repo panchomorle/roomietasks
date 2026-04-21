@@ -294,6 +294,18 @@ export const translations = {
     info_restrict_new_cycle_claims: "When enabled, members can only claim tasks that are due in the current cycle. Tasks from future cycles cannot be claimed until that cycle begins.",
     claim_not_current_cycle: "Future Cycle",
     claim_not_current_cycle_desc: "This task belongs to a future cycle. You can only claim it once the new cycle begins.",
+
+    // Profile & Settings refactor
+    settings: "Settings",
+    my_profile: "My Profile",
+    my_settings: "My Settings",
+    log_out: "Log Out",
+    log_out_confirm: "Log Out?",
+    log_out_confirm_desc: "Are you sure you want to log out?",
+    log_out_confirm_btn: "Yes, Log Out",
+    no_achievements_yet: "No achievements yet",
+    times_awarded: "\u00d7{count}",
+    view_profile: "View Profile",
   },
   es: {
     // Tabs
@@ -588,6 +600,18 @@ export const translations = {
     info_restrict_new_cycle_claims: "Cuando está activado, los miembros solo pueden reclamar tareas que vencen en el ciclo actual. Las tareas de ciclos futuros no se pueden reclamar hasta que ese ciclo comience.",
     claim_not_current_cycle: "Ciclo Futuro",
     claim_not_current_cycle_desc: "Esta tarea pertenece a un ciclo futuro. Podrás reclamarla cuando comience el nuevo ciclo.",
+
+    // Profile & Settings refactor
+    settings: "Ajustes",
+    my_profile: "Mi Perfil",
+    my_settings: "Mis Ajustes",
+    log_out: "Cerrar sesi\u00f3n",
+    log_out_confirm: "\u00bfCerrar sesi\u00f3n?",
+    log_out_confirm_desc: "\u00bfEst\u00e1s seguro de que deseas cerrar sesi\u00f3n?",
+    log_out_confirm_btn: "S\u00ed, cerrar sesi\u00f3n",
+    no_achievements_yet: "Sin logros todav\u00eda",
+    times_awarded: "\u00d7{count}",
+    view_profile: "Ver Perfil",
   },
 };
 

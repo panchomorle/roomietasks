@@ -11,6 +11,7 @@ import { useState } from "react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { formatPoints } from "@/lib/numberUtils";
+import { useRouter } from "next/navigation";
 
 export default function LeaderboardPage() {
   const { t, language } = useTranslation();
@@ -35,6 +36,7 @@ export default function LeaderboardPage() {
   const [editDuration, setEditDuration] = useState("");
   const [showEndModal, setShowEndModal] = useState(false);
   const [kickConfirm, setKickConfirm] = useState<{ userId: string; name: string } | null>(null);
+  const router = useRouter();
 
   if (!roomId || roomLoading || membersLoading || trophiesLoading) {
     return <div className="p-8"><div className="w-8 h-8 rounded-full border-2 border-brand-500 border-t-transparent animate-spin mx-auto" /></div>;
@@ -239,7 +241,10 @@ export default function LeaderboardPage() {
                   className={`relative flex items-center justify-between gap-3 sm:gap-4 px-4 py-3 sm:py-4 rounded-2xl transition-all ${isFirst ? "bg-white/[0.06] shadow-sm" : "hover:bg-white/[0.02]"
                     }`}
                 >
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <button
+                    onClick={() => router.push(`/dashboard/profile/${entry.userId}`)}
+                    className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1 text-left hover:opacity-80 transition-opacity"
+                  >
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 ${isFirst ? "bg-yellow-500 text-slate-900 shadow-md shadow-yellow-500/20 text-sm" :
                         sortBy === "points" && i === 1 && entry.points > 0 ? "bg-slate-300 text-slate-900 text-sm" :
                           sortBy === "points" && i === 2 && entry.points > 0 ? "bg-amber-700 text-white text-sm" :
@@ -266,7 +271,7 @@ export default function LeaderboardPage() {
                       </div>
                       <p className="text-xs text-slate-400 font-medium">{formatPoints(entry.points, language as 'en' | 'es')} {t("points")}</p>
                     </div>
-                  </div>
+                  </button>
 
                   <div className="flex items-center gap-3 sm:gap-5 flex-shrink-0">
                     <div className="text-right">
