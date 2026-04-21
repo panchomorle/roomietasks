@@ -27,13 +27,14 @@
 - **`task_templates`**: Defines the blueprint for recurring tasks (e.g., patterns, points reward).
 - **`task_instances`**: Individual, actionable manifestations of a task that users claim and complete.
 - **`period_history` / `period_user_history`**: Snapshots of past seasons/periods and the results/points distributed.
+- **`period_achievements`**: Stores one achievement per type per season (e.g., `winner`, `farmer`, `hard_worker`, `troll`, `octopus`). Written by the `end_period` RPC and read by the history/profile pages. See `DECISIONS.md` §13 for the full achievement spec.
 
 ### 4. Heavy Lifting via Supabase RPCs / Database Functions
 - Complex, transactional logic is offloaded to the database via stored procedures (RPCs) to ensure data integrity and prevent race conditions.
 - **Available Functions (`public` schema):**
   - \`claim_task_instance(p_task_id uuid, p_user_id uuid, p_force boolean DEFAULT false) -> jsonb\`: Safely assigns a task to a user, checking point limits and applying cool-downs.
   - \`complete_task_instance(p_task_id uuid, p_user_id uuid, p_force boolean DEFAULT false) -> jsonb\`: Validates and marks tasks as completed.
-  - \`end_period(p_room_id uuid) -> uuid\`: Finalizes the current season, distributes data into history tables, and resets the board.
+  - \`end_period(p_room_id uuid) -> uuid\`: Finalizes the current season, distributes data into history tables, computes and stores season achievements in `period_achievements`, and resets the board.
   - \`generate_invite_code() -> trigger\`: Automatically generates short invite codes for rooms on creation.
   - \`generate_task_instances(p_template_id uuid, p_start_date timestamp with time zone DEFAULT now(), p_count integer DEFAULT 4) -> void\`: Creates actionable task instances based on \`task_templates\` recurrence rules.
   - \`get_current_cycle_start(p_room_id uuid, p_timezone text DEFAULT 'UTC'::text) -> timestamp with time zone\`: Calculates the start of the currently active cycle based on the room's \`cycle_mode\` configuration. Used to enforce point limits.
@@ -55,8 +56,12 @@
 
 ## File Structure Organization
 - `/app`: Next.js App Router pages and layouts (`/dashboard`, `/room`, etc.).
+  - `/app/dashboard/history/[periodId]/page.tsx`: Season detail page showing podium, achievements, and prize distribution for a past season.
 - `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`) and the dedicated `/components/modals/` directory for all app modals.
 - `/hooks`: Custom React Query hooks (`/queries`, `/mutations`) and utility hooks like `useCycleCountdown.ts`.
+  - `/hooks/queries/useSeasonData.ts`: Hooks for fetching past seasons (`usePastSeasons`), season detail with achievements (`useSeasonDetail`), and task instances for achievement preview (`useSeasonTaskInstances`).
 - `/lib`: Helper logic, configurations, translation maps, date utilities (handling complex cycle calculations), and the Supabase client setup.
+  - `/lib/achievements.ts`: Achievement type definitions, the `ACHIEVEMENT_DEFS` constant map, and the `computeAchievementPreviews()` function for client-side preview in `EndSeasonModal`.
+  - `/lib/seasonLabel.ts`: `formatSeasonLabel()` utility — formats season date ranges into compact labels like `Mar-Apr/26`.
 - `/store`: Jotai atoms.
 - `/types`: Contains TypeScript types, critically including the generated `database.ts` from Supabase.

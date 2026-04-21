@@ -3,9 +3,12 @@
 import React from 'react';
 import { useLeaderboard } from '@/hooks/queries/useTasks';
 import { useRoom, useRoomMembers } from '@/hooks/queries/useRooms';
+import { useSeasonTaskInstances } from '@/hooks/queries/useSeasonData';
 import type { Tables } from '@/types/database';
 import { useTranslation } from '@/hooks/useTranslation';
 import { formatPoints } from '@/lib/numberUtils';
+import { ACHIEVEMENT_DEFS, computeAchievementPreviews } from '@/lib/achievements';
+import type { AchievementKey } from '@/lib/achievements';
 
 type Room = Tables<'rooms'>;
 
@@ -24,6 +27,7 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
 
   const { data: members } = useRoomMembers(roomId);
   const { data: leaderboard } = useLeaderboard(roomId, room?.current_period_start_date);
+  const { data: seasonTasks } = useSeasonTaskInstances(roomId, room?.current_period_start_date);
 
   if (!isOpen) return null;
 
@@ -60,6 +64,24 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
 
   const allParticipants = [...participants, ...zeroMembers];
   const top3 = allParticipants.slice(0, 3);
+
+  // Compute achievement previews
+  const winnerId = allParticipants.length > 0 && allParticipants[0].points > 0 ? allParticipants[0].userId : null;
+  const winnerName = allParticipants.length > 0 && allParticipants[0].points > 0 ? allParticipants[0].fullName : null;
+  const userNameMap = new Map<string, string>();
+  for (const p of allParticipants) {
+    userNameMap.set(p.userId, p.fullName ?? '?');
+  }
+  const achievementPreviews = computeAchievementPreviews(
+    (seasonTasks ?? []).map((t) => ({
+      completed_by_user_id: t.completed_by_user_id,
+      points_reward: t.points_reward,
+    })),
+    room?.point_limit ?? null,
+    winnerId,
+    winnerName,
+    userNameMap
+  );
 
   // Build podium entries with rank metadata, then reorder visually: [2nd, 1st, 3rd]
   const rankMeta = [
@@ -134,6 +156,30 @@ export function EndSeasonModal({ isOpen, onClose, onConfirm, roomId, room: roomP
                     {/* Podium Bar */}
                     <div className={`w-full ${meta.height} ${meta.color} rounded-t-xl mt-2 flex items-center justify-center`}>
                       <span className={`text-xs font-black ${meta.textColor}`}>{meta.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Achievements Preview */}
+        {achievementPreviews.length > 0 && (
+          <div className="px-4 pb-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider px-2 mb-2">{t("achievements")}</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {achievementPreviews.map((ach) => {
+                const def = ACHIEVEMENT_DEFS[ach.key as AchievementKey];
+                return (
+                  <div
+                    key={ach.key}
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-2xl p-3 flex items-center gap-3"
+                  >
+                    <span className="text-2xl flex-shrink-0">{def.emoji}</span>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">{t(def.labelKey)}</p>
+                      <p className="text-[10px] text-slate-400 truncate">{ach.userName}</p>
                     </div>
                   </div>
                 );

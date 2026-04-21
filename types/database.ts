@@ -49,6 +49,41 @@ export type Database = {
           },
         ]
       }
+      period_achievements: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          metadata: Json | null
+          period_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          metadata?: Json | null
+          period_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          metadata?: Json | null
+          period_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "period_achievements_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "period_history"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       period_history: {
         Row: {
           created_at: string

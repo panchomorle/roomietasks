@@ -37,7 +37,7 @@ This document tracks significant design choices made during the development of R
 
 **Implemented Modals**:
 - `PointLimitModal.tsx`: The primary decision engine for business logic errors during task claiming and completion (handles point limits, cooldowns, claim limits, and future cycle restrictions).
-- `EndSeasonModal.tsx`: Advanced confirmation modal displaying the podium, prize pool, and point shares before permanently finalizing a season.
+- `EndSeasonModal.tsx`: Advanced confirmation modal displaying the podium, achievement previews (computed client-side), prize pool, and point shares before permanently finalizing a season. After confirmation, achievements are stored in `period_achievements` by the `end_period` RPC.
 - `NotificationPromptModal.tsx`: Beautifully designed bottom-sheet style prompt prompting users to opt-in to Push Notifications.
 - `DeleteTaskModal.tsx`: Branded red destructive confirmation modal replacing `window.confirm()` (reusable via override props for kicking members).
 - `GenericErrorModal.tsx`: Catch-all fallback modal for unexpected errors, replacing generic `alert()` calls.
@@ -103,3 +103,120 @@ Both RPCs return JSONB. Business-logic errors come back as `{ data: { success: f
 **Reasoning**:
 - Hand-writing interfaces for complicated RPC returns and schemas invites subtle client-side crashes if the DB API diverges from frontend expectations.
 - Running this command acts as the source of truth bridge whenever structural database changes (tables, columns, or RPC functions) occur.
+
+## 13. Season Achievements System
+**Decision**: Achievements are computed and **stored** once at season-end inside the `end_period` RPC, persisted in the `period_achievements` table.
+**Reasoning**:
+- **Scalability**: A future user profile page can fetch all achievements for a user with a single cheap query (`SELECT * FROM period_achievements WHERE user_id = ?`), rather than recalculating across every season's task history.
+- **Immunity to setting changes**: Achievements reflect the room's `point_limit` at the exact moment the season ended. If the limit is changed later, past awards are unaffected.
+- **Snapshot integrity**: Aligns with the same philosophy as `period_history` — once a season closes, its outcome is immutable.
+
+**Achievement Definitions**:
+
+| Key | Emoji | Condition | Requires `point_limit`? |
+|---|---|---|---|
+| `winner` | 🏆 | Most total points earned | No |
+| `octopus` | 🐙 | Most tasks completed (count) | No |
+| `farmer` | 🌾 | Most points from low-point tasks (`ratio < 0.15`) | Yes |
+| `hard_worker` | 💪 | Most points from high-point tasks (`ratio >= 0.50`) | Yes |
+| `troll` | 🤡 | Most completions of ultra-low tasks (`ratio < 0.05`, count) | Yes |
+
+**Point ratio**: `task.points_reward / room.point_limit`. Matches the color thresholds in `lib/pointsColor.ts`.
+
+**Tie-breaking**: The user with more total points wins a tie. If still tied, no award is given for that category.
+
+**Rooms without `point_limit`**: Only `winner` and `octopus` are awarded.
+
+**Schema**: `period_achievements(id, period_id, user_id, key, metadata jsonb, created_at)` with `UNIQUE(period_id, key)` — one award per type per season. RLS allows reads by room members only.
+
+**Preview in EndSeasonModal**: Before the admin confirms ending the season, `EndSeasonModal` shows a client-side _preview_ of achievements (computed by `computeAchievementPreviews()` in `lib/achievements.ts`) using the same thresholds. This is display-only and does not persist anything.
+
+---
+
+## How to Add a New Achievement
+
+This is a step-by-step tutorial for adding a new achievement in the future.
+
+### 1. Define it in `lib/achievements.ts`
+
+Add the key to `AchievementKey` and add its definition to `ACHIEVEMENT_DEFS`:
+
+```ts
+export type AchievementKey = "winner" | "farmer" | ... | "your_new_key";
+
+ACHIEVEMENT_DEFS.your_new_key = {
+  key: "your_new_key",
+  emoji: "🎯",
+  labelKey: "achievement_your_new_key",
+  descKey: "achievement_your_new_key_desc",
+};
+```
+
+### 2. Add translations in `lib/translations.ts`
+
+Under both `en` and `es` objects, in the achievements block:
+
+```ts
+achievement_your_new_key: "The Achiever",
+achievement_your_new_key_desc: "Did something amazing",
+```
+
+### 3. Add preview logic in `lib/achievements.ts`
+
+Inside `computeAchievementPreviews()`, add the aggregation and push to `previews`:
+
+```ts
+// Your New Achievement: some condition
+let bestId: string | null = null;
+let bestValue = 0;
+for (const [uid, value] of someAggregationMap) {
+  if (value > bestValue) { bestValue = value; bestId = uid; }
+}
+if (bestId && bestValue > 0) {
+  previews.push({ key: "your_new_key", userId: bestId,
+    userName: userNameMap.get(bestId) ?? "?",
+    metadata: { value: bestValue } });
+}
+```
+
+### 4. Add computation to the `end_period` RPC
+
+In Supabase, add variable declarations and a `SELECT ... INTO` block inside the RPC body, then `INSERT INTO period_achievements`. Follow the existing pattern for `v_octopus_id` / `v_octopus_count`. Apply as a migration:
+
+```sql
+CREATE OR REPLACE FUNCTION public.end_period(...) ...
+-- add: v_new_id uuid; v_new_val bigint;
+-- add SELECT ... INTO v_new_id, v_new_val ...
+-- add INSERT INTO period_achievements ... 'your_new_key' ...
+```
+
+### 5. Run the retroactive backfill
+
+For all past seasons, run a one-time script in Supabase SQL Editor (or via MCP):
+
+```sql
+DO $$ DECLARE v_period record; v_id uuid; v_val bigint;
+BEGIN
+  FOR v_period IN SELECT id AS period_id, room_id, period_start, period_end
+                 FROM period_history WHERE total_points > 0
+  LOOP
+    -- your aggregation query here
+    IF v_id IS NOT NULL THEN
+      INSERT INTO period_achievements (period_id, user_id, key, metadata)
+      VALUES (v_period.period_id, v_id, 'your_new_key', jsonb_build_object('value', v_val))
+      ON CONFLICT (period_id, key) DO NOTHING;
+    END IF;
+  END LOOP;
+END; $$;
+```
+
+> [!TIP]
+> Use `ON CONFLICT (period_id, key) DO NOTHING` so the script is safely re-runnable.
+
+### 6. Regenerate TypeScript types (only if schema changed)
+
+If you added a new column or table, run:
+```bash
+npm run generate:types
+```
+No types regeneration is needed if you only added a new `key` value to the existing `period_achievements` table.
