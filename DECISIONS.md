@@ -29,18 +29,30 @@ This document tracks significant design choices made during the development of R
 - Simplified navigation context, allowing the main App Shell to cleanly disable `Tasks`, `Leaderboard`, and `History` tabs if no active room is selected.
 
 ## 5. UI Modals for Destructive/Final Actions
-**Decision**: Replaced generic `window.confirm()` calls with beautifully designed UI Modals (e.g., `EndSeasonModal`, `PointLimitModal`).
+**Decision**: Replaced generic `window.confirm()` and `alert()` calls with beautifully designed UI Modals located in the dedicated `/components/modals/` directory.
 **Reasoning**: 
 - Elevates the visual quality to a premium aesthetic (glassmorphism/Tailwind components).
+- Centralizes scattered modal files into a single, cohesive folder structure.
 - Allows the injection of detailed context before a permanent action (e.g., showing exact point breakdowns and tasks completed before ending the season).
+
+**Implemented Modals**:
+- `PointLimitModal.tsx`: The primary decision engine for business logic errors during task claiming and completion (handles point limits, cooldowns, claim limits, and future cycle restrictions).
+- `EndSeasonModal.tsx`: Advanced confirmation modal displaying the podium, prize pool, and point shares before permanently finalizing a season.
+- `NotificationPromptModal.tsx`: Beautifully designed bottom-sheet style prompt prompting users to opt-in to Push Notifications.
+- `DeleteTaskModal.tsx`: Branded red destructive confirmation modal replacing `window.confirm()` (reusable via override props for kicking members).
+- `GenericErrorModal.tsx`: Catch-all fallback modal for unexpected errors, replacing generic `alert()` calls.
 
 **`PointLimitModal` – Critical Implementation Note**:
 The `PointLimitModal` handles errors from **two separate RPCs** (`claim_task_instance` and `complete_task_instance`), both of which can return `point_limit_exceeded` as a JSONB payload (`{ success: false, error: "point_limit_exceeded", ... }`). The `action` prop (`"claim"` | `"complete"`) **must always be passed** and must match the operation that triggered the error:
 - `action="claim"` → the "force" button calls `claimAnyway` (re-invokes claim with `p_force: true`).
 - `action="complete"` → the "force" button calls `completeAnyway` (re-invokes complete with `p_force: true`).
 
-**Error Flow — How RPC Business Errors Reach The UI**:
-Both RPCs return JSONB. Business-logic errors come back as `{ data: { success: false, error: "<code>", ... }, error: null }`. The mutation hooks in `hooks/mutations/useTaskMutations.ts` convert `data.error` into a thrown `Error` with `err.code = data.error` and `err.details = data`. The `handleClaim` and `handleComplete` catch blocks in `TaskCard` (`app/dashboard/page.tsx`) must each list **every** `err.code` value they need to intercept — any code not listed will fall through to the generic `alert(err.message)` fallback and display the raw code string to the user.
+**Error Flow & Normalization — How to Avoid Breaking RPC Handling**:
+Both RPCs return JSONB. Business-logic errors come back as `{ data: { success: false, error: "<code>", ... }, error: null }`. The mutation hooks in `hooks/mutations/useTaskMutations.ts` convert `data.error` into a thrown `Error` with `err.code = data.error` and `err.details = data`. 
+
+> [!WARNING]
+> **RPC Code Mismatches**: The frontend React components (`handleClaim` / `handleComplete`) must explicitly check `err.code` to trigger specific Modals (like `PointLimitModal`). If an agent or developer changes an RPC to return `"future_cycle"` but the UI expects `"claim_not_current_cycle"`, the error **will fall through** the conditional logic and trigger the `GenericErrorModal` (or previously, a raw `alert(err.code)`). 
+> **How to avoid this**: When returning custom string IDs from Supabase RPCs, you MUST either ensure identical 1:1 mapping in the frontend catch blocks, or manually normalize the alias in the catch block (e.g., `if (err.code === "future_cycle") err.code = "claim_not_current_cycle";`) *before* passing it to the UI modal logic. Exhaustive error handling is required.
 
 ## 6. Fractional Points Support
 **Decision**: Switched from implicit integer point handling in Supabase RPCs to explicit `numeric` types for all point-related calculations.

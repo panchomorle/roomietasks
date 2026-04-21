@@ -55,7 +55,7 @@
 
 ## File Structure Organization
 - `/app`: Next.js App Router pages and layouts (`/dashboard`, `/room`, etc.).
-- `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`, modals).
+- `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`) and the dedicated `/components/modals/` directory for all app modals.
 - `/hooks`: Custom React Query hooks (`/queries`, `/mutations`) and utility hooks like `useCycleCountdown.ts`.
 - `/lib`: Helper logic, configurations, translation maps, date utilities (handling complex cycle calculations), and the Supabase client setup.
 - `/store`: Jotai atoms.
