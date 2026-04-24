@@ -19,16 +19,18 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
   const { t, language } = useTranslation();
   const createRoom = useCreateRoom();
   const [, setCurrentRoomId] = useAtom(currentRoomIdAtom);
-  const [form, setForm] = useState({
+  const initialForm = {
     name: "",
     contribution: 50,
     periodDays: 30,
     pointLimit: "0",
     pointLimitPeriod: "week" as "day" | "week" | "month",
-  });
+  };
+  const [form, setForm] = useState(initialForm);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     const room = await createRoom.mutateAsync({
       name: form.name,
       contributionPerMember: form.contribution,
@@ -43,7 +45,7 @@ function CreateRoomDrawer({ userId, onClose }: { userId: string; onClose: () => 
   };
 
   return (
-    <DraggableDrawer onClose={onClose}>
+    <DraggableDrawer onClose={onClose} isDirty={isDirty} onSave={handleSubmit}>
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("create_a_room")}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">

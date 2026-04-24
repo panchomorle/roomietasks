@@ -1,18 +1,35 @@
 "use client";
 
 import { useRef, useState, useCallback, type ReactNode } from "react";
+import { UnsavedChangesModal } from "./modals/UnsavedChangesModal";
+import { useSetAtom } from "jotai";
+import { addToastAtom } from "@/store/toastAtom";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface DraggableDrawerProps {
   onClose: () => void;
   children: ReactNode;
+  isDirty?: boolean;
+  onSave?: () => Promise<void> | void;
 }
 
-export function DraggableDrawer({ onClose, children }: DraggableDrawerProps) {
+export function DraggableDrawer({ onClose, children, isDirty, onSave }: DraggableDrawerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [translateY, setTranslateY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const startY = useRef(0);
   const currentY = useRef(0);
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const addToast = useSetAtom(addToastAtom);
+  const { t } = useTranslation();
+
+  const handleCloseAttempt = useCallback(() => {
+    if (isDirty) {
+      setShowUnsavedModal(true);
+    } else {
+      onClose();
+    }
+  }, [isDirty, onClose]);
 
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
@@ -34,11 +51,11 @@ export function DraggableDrawer({ onClose, children }: DraggableDrawerProps) {
     setIsDragging(false);
     // If dragged more than 120px down, close
     if (translateY > 120) {
-      onClose();
+      handleCloseAttempt();
     } else {
       setTranslateY(0);
     }
-  }, [translateY, onClose]);
+  }, [translateY, handleCloseAttempt]);
 
   // Mouse support for desktop testing
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -58,7 +75,7 @@ export function DraggableDrawer({ onClose, children }: DraggableDrawerProps) {
       setIsDragging(false);
       const finalDelta = currentY.current - startY.current;
       if (finalDelta > 120) {
-        onClose();
+        handleCloseAttempt();
       } else {
         setTranslateY(0);
       }
@@ -68,13 +85,13 @@ export function DraggableDrawer({ onClose, children }: DraggableDrawerProps) {
 
     document.addEventListener("mousemove", handleMouseMove);
     document.addEventListener("mouseup", handleMouseUp);
-  }, [onClose]);
+  }, [handleCloseAttempt]);
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4">
       <div
         className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={handleCloseAttempt}
         style={{ opacity: Math.max(0, 1 - translateY / 400) }}
       />
       <div
@@ -102,6 +119,32 @@ export function DraggableDrawer({ onClose, children }: DraggableDrawerProps) {
           {children}
         </div>
       </div>
+
+      {showUnsavedModal && (
+        <UnsavedChangesModal
+          isOpen={showUnsavedModal}
+          onClose={() => {
+            setShowUnsavedModal(false);
+            setTranslateY(0);
+          }}
+          onDiscard={() => {
+            setShowUnsavedModal(false);
+            addToast({ message: t("changes_discarded" as any) || "Discarded changes.", type: "info" });
+            onClose();
+          }}
+          onSave={async () => {
+            if (onSave) {
+              await onSave();
+              setShowUnsavedModal(false);
+              addToast({ message: t("changes_saved" as any) || "Changes saved.", type: "success" });
+              onClose();
+            } else {
+              setShowUnsavedModal(false);
+              onClose();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

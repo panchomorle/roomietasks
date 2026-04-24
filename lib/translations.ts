@@ -294,6 +294,12 @@ export const translations = {
     info_restrict_new_cycle_claims: "When enabled, members can only claim tasks that are due in the current cycle. Tasks from future cycles cannot be claimed until that cycle begins.",
     claim_not_current_cycle: "Future Cycle",
     claim_not_current_cycle_desc: "This task belongs to a future cycle. You can only claim it once the new cycle begins.",
+    // Unsaved Changes Modal
+    unsaved_changes_title: "Unsaved Changes",
+    unsaved_changes_desc: "You have unsaved changes. Do you want to save them before closing?",
+    discard_changes: "Discard",
+    changes_saved: "Changes saved.",
+    changes_discarded: "Discarded changes.",
 
     // Profile & Settings refactor
     settings: "Settings",
@@ -600,6 +606,12 @@ export const translations = {
     info_restrict_new_cycle_claims: "Cuando está activado, los miembros solo pueden reclamar tareas que vencen en el ciclo actual. Las tareas de ciclos futuros no se pueden reclamar hasta que ese ciclo comience.",
     claim_not_current_cycle: "Ciclo Futuro",
     claim_not_current_cycle_desc: "Esta tarea pertenece a un ciclo futuro. Podrás reclamarla cuando comience el nuevo ciclo.",
+    // Unsaved Changes Modal
+    unsaved_changes_title: "Cambios sin guardar",
+    unsaved_changes_desc: "Tienes cambios sin guardar. ¿Deseas guardarlos antes de cerrar?",
+    discard_changes: "Descartar",
+    changes_saved: "Cambios guardados.",
+    changes_discarded: "Cambios descartados.",
 
     // Profile & Settings refactor
     settings: "Ajustes",

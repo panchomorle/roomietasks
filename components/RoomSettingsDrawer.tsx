@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DraggableDrawer } from "./DraggableDrawer";
 import { useUpdateRoom } from "@/hooks/mutations/useTaskMutations";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -67,7 +67,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
 
   const hasCycles = (room.cycles_per_period || 1) > 1 || room.cycle_mode !== "count";
 
-  const [form, setForm] = useState({
+  const initialForm = useMemo(() => ({
     name: room.name,
     contribution: room.contribution_per_member,
     periodDays: String(room.period_duration_days || 30),
@@ -87,7 +87,11 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
       const d = new Date(room.current_period_start_date || new Date());
       return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0');
     })(),
-  });
+  }), [room, hasCycles]);
+
+  const [form, setForm] = useState(initialForm);
+
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   const isSpanish = t("language") === "Español";
   const dateLocale = isSpanish ? es : enUS;
@@ -107,8 +111,8 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
   const isPointLimitActive = (parseFloat(form.pointLimit as string) || 0) > 0;
   const availablePeriods: ("day" | "week" | "month" | "cycle")[] = ["day", "week", "month", ...(form.cyclesEnabled ? ["cycle" as const] : [])];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     // When cycles are disabled, persist 1 cycle and default count mode
     const cyclesPerPeriod = form.cyclesEnabled
@@ -149,7 +153,7 @@ export function RoomSettingsDrawer({ room, onClose }: RoomSettingsDrawerProps) {
   const dayLabels = [t("day_s"), t("day_m"), t("day_t"), t("day_w"), t("day_th"), t("day_f"), t("day_sa")];
 
   return (
-    <DraggableDrawer onClose={onClose}>
+    <DraggableDrawer onClose={onClose} isDirty={isDirty} onSave={handleSubmit}>
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("room_settings")}</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4 pb-8">

@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTaskInstances } from "@/hooks/queries/useTasks";
 import { useRoom, useRoomMembers } from "@/hooks/queries/useRooms";
 import { useClaimTask, useUnclaimTask, useCompleteTask, useCreateTaskTemplate, useDeleteTask, useEditTaskTemplate } from "@/hooks/mutations/useTaskMutations";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { DraggableDrawer } from "@/components/DraggableDrawer";
 import { PointLimitModal, DeleteTaskModal, GenericErrorModal } from "@/components/modals";
 
@@ -247,7 +247,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
   const template = task.template;
   const initialRecurrence = template?.recurrence_pattern || { type: "none" };
 
-  const [form, setForm] = useState({
+  const initialForm = useMemo(() => ({
     title: template?.title || task.title || "",
     description: template?.description || task.description || "",
     pointsReward: String(template?.points_reward || task.points_reward || 10),
@@ -257,7 +257,10 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     spawnOnCompletion: template?.spawn_on_completion || false,
     startsToday: false,
     customDate: (() => { const d = new Date(task.due_date); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); })(),
-  });
+  }), [task, template, initialRecurrence.type, initialRecurrence.days]);
+
+  const [form, setForm] = useState(initialForm);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
     const date = new Date();
@@ -305,8 +308,8 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     let recurrencePattern: { type: string; days?: number[] };
     let startDateString: string | undefined = undefined;
@@ -340,7 +343,7 @@ function EditTaskDrawer({ task, onClose }: { task: any; onClose: () => void }) {
   };
 
   return (
-    <DraggableDrawer onClose={onClose}>
+    <DraggableDrawer onClose={onClose} isDirty={isDirty} onSave={handleSubmit}>
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("edit_task")}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5 pb-8">
@@ -569,7 +572,7 @@ function CreateTaskDrawer({
 }) {
   const { t } = useTranslation();
   const createTemplate = useCreateTaskTemplate();
-  const [form, setForm] = useState({
+  const initialForm = useMemo(() => ({
     title: "",
     description: "",
     pointsReward: "10",
@@ -579,7 +582,10 @@ function CreateTaskDrawer({
     spawnOnCompletion: false,
     startsToday: true,
     customDate: new Date().getFullYear() + '-' + String(new Date().getMonth() + 1).padStart(2, '0') + '-' + String(new Date().getDate()).padStart(2, '0'),
-  });
+  }), []);
+
+  const [form, setForm] = useState(initialForm);
+  const isDirty = JSON.stringify(form) !== JSON.stringify(initialForm);
 
   const updateDefaultStartDate = (recurrenceType: string, weeklyDays: number[] = form.weeklyDays) => {
     const date = new Date();
@@ -627,8 +633,8 @@ function CreateTaskDrawer({
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
 
     let recurrencePattern: { type: string; days?: number[] };
     let startDateString: string | undefined = undefined;
@@ -663,7 +669,7 @@ function CreateTaskDrawer({
   };
 
   return (
-    <DraggableDrawer onClose={onClose}>
+    <DraggableDrawer onClose={onClose} isDirty={isDirty} onSave={handleSubmit}>
       <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t("new_task")}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
