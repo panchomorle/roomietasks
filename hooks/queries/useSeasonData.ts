@@ -167,3 +167,28 @@ export function useSeasonTaskInstances(
     enabled: !!roomId && !!periodStart,
   });
 }
+
+/**
+ * Fetch the most recently ended season for a room.
+ * Used by SeasonManager to detect season-end for non-admin members.
+ */
+export function useLatestEndedSeason(roomId: string | null) {
+  const supabase = createClient();
+
+  return useQuery({
+    queryKey: ["latest-ended-season", roomId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("period_history")
+        .select("id, room_id, period_start, period_end, created_at")
+        .eq("room_id", roomId!)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!roomId,
+  });
+}

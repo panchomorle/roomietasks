@@ -312,6 +312,9 @@ export const translations = {
     no_achievements_yet: "No achievements yet",
     times_awarded: "\u00d7{count}",
     view_profile: "View Profile",
+    close: "Close",
+    view_details: "View Details",
+    season_ended_title: "Season Ended!",
   },
   es: {
     // Tabs
@@ -624,6 +627,9 @@ export const translations = {
     no_achievements_yet: "Sin logros todav\u00eda",
     times_awarded: "\u00d7{count}",
     view_profile: "Ver Perfil",
+    close: "Cerrar",
+    view_details: "Ver Detalles",
+    season_ended_title: "\u00a1Temporada Finalizada!",
   },
 };
 

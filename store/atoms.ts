@@ -20,3 +20,9 @@ export const taskSortAtom = atom<TaskSort>("due_date_asc");
 
 // Push notification prompt — persisted so it only shows once
 export const pushPromptDismissedAtom = atomWithStorage<boolean>("roomietasks_push_prompt_dismissed", false);
+
+// Season summaries already seen — keyed by period_history ID so the modal shows only once
+export const seenSeasonSummariesAtom = atomWithStorage<Record<string, boolean>>(
+  "roomietasks_seen_season_summaries",
+  {}
+);

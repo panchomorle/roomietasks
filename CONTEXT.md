@@ -27,6 +27,6 @@
 - **Fairness Mechanisms**: "Claim Warnings" if users exceed point limits (now including Cycle-based limits), and custom "Cooldown" periods for repeating tasks.
 - **UX Improvements**: Dedicated `Rooms` management page, simplified dashboard countdowns, and refined internal alignment for mobile/drawer tooltips.
 - **Localization**: Full translation support (English/Spanish) for all new UI strings and technical terms.
-- **End Season Summary**: A detailed end-of-season modal showing exact task completion counts alongside points to ensure transparency before the season is finalized and historical data is logged.
+- **End Season Summary**: A detailed end-of-season modal showing exact task completion counts alongside points to ensure transparency before the season is finalized and historical data is logged. After the admin ends the season, all room members see a read-only summary modal (once per season, tracked in localStorage) with a link to the full season history page.
 - **Timezone Synchronization**: Accurate cycle countdowns and boundary resets that respect the room's explicitly configured timezone, preventing server UTC drift. Allows international members to align "midnight" universally.
 - **Scheduled Push Notifications**: Server-side `pg_cron` jobs that dispatch localized, time-aware push notifications (daily reminders and cycle-end warnings) directly to user devices.

@@ -312,6 +312,8 @@ export function useEndPeriod() {
       queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
       queryClient.invalidateQueries({ queryKey: ["room"] });
       queryClient.invalidateQueries({ queryKey: ["task-instances"] });
+      queryClient.invalidateQueries({ queryKey: ["past-seasons"] });
+      queryClient.invalidateQueries({ queryKey: ["latest-ended-season"] });
     },
   });
 }

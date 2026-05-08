@@ -37,7 +37,7 @@ This document tracks significant design choices made during the development of R
 
 **Implemented Modals**:
 - `PointLimitModal.tsx`: The primary decision engine for business logic errors during task claiming and completion (handles point limits, cooldowns, claim limits, and future cycle restrictions).
-- `EndSeasonModal.tsx`: Advanced confirmation modal displaying the podium, achievement previews (computed client-side), prize pool, and point shares before permanently finalizing a season. After confirmation, achievements are stored in `period_achievements` by the `end_period` RPC.
+- `EndSeasonModal.tsx`: Dual-mode season modal. **Admin mode** (`mode="admin"`, default): confirmation modal displaying the podium, achievement previews (computed client-side), prize pool, and point shares before permanently finalizing a season. **Summary mode** (`mode="summary"`): read-only post-season modal using historical data from `period_history`/`period_user_history`/`period_achievements`, with a "View Details" button navigating to `/dashboard/history/[periodId]`. Shown to all non-admin members once per season via `seenSeasonSummariesAtom` (localStorage). After admin confirmation, achievements are stored in `period_achievements` by the `end_period` RPC.
 - `NotificationPromptModal.tsx`: Beautifully designed bottom-sheet style prompt prompting users to opt-in to Push Notifications.
 - `DeleteTaskModal.tsx`: Branded red destructive confirmation modal replacing `window.confirm()` (reusable via override props for kicking members).
 - `GenericErrorModal.tsx`: Catch-all fallback modal for unexpected errors, replacing generic `alert()` calls.

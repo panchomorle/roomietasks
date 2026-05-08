@@ -58,10 +58,12 @@
 - `/app`: Next.js App Router pages and layouts (`/dashboard`, `/room`, etc.).
   - `/app/dashboard/history/[periodId]/page.tsx`: Season detail page showing podium, achievements, and prize distribution for a past season.
 - `/components`: Reusable UI components (`DraggableDrawer`, `SeasonManager`) and the dedicated `/components/modals/` directory for all app modals.
+  - `SeasonManager.tsx`: Global season watcher with two flows: (1) admin expired-season detection showing the confirmation modal, (2) member summary detection that shows the read-only summary modal once per season using `seenSeasonSummariesAtom` (persisted in localStorage).
 - `/hooks`: Custom React Query hooks (`/queries`, `/mutations`) and utility hooks like `useCycleCountdown.ts`.
-  - `/hooks/queries/useSeasonData.ts`: Hooks for fetching past seasons (`usePastSeasons`), season detail with achievements (`useSeasonDetail`), and task instances for achievement preview (`useSeasonTaskInstances`).
+  - `/hooks/queries/useSeasonData.ts`: Hooks for fetching past seasons (`usePastSeasons`), season detail with achievements (`useSeasonDetail`), task instances for achievement preview (`useSeasonTaskInstances`), and latest ended season per room (`useLatestEndedSeason`).
 - `/lib`: Helper logic, configurations, translation maps, date utilities (handling complex cycle calculations), and the Supabase client setup.
   - `/lib/achievements.ts`: Achievement type definitions, the `ACHIEVEMENT_DEFS` constant map, and the `computeAchievementPreviews()` function for client-side preview in `EndSeasonModal`.
   - `/lib/seasonLabel.ts`: `formatSeasonLabel()` utility — formats season date ranges into compact labels like `Mar-Apr/26`.
 - `/store`: Jotai atoms.
+  - `seenSeasonSummariesAtom`: Persisted atom (`atomWithStorage`) mapping `period_history.id → true`. Used by `SeasonManager` to ensure the member summary modal is shown only once per user per season.
 - `/types`: Contains TypeScript types, critically including the generated `database.ts` from Supabase.
