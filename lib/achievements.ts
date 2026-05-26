@@ -78,6 +78,30 @@ export function computeAchievementPreviews(
     });
   }
 
+  // Octopus: most tasks completed (count-based, no point_limit needed)
+  const userTaskCount = new Map<string, number>();
+  for (const task of tasks) {
+    const uid = task.completed_by_user_id;
+    if (!uid) continue;
+    userTaskCount.set(uid, (userTaskCount.get(uid) ?? 0) + 1);
+  }
+  let octopusId: string | null = null;
+  let octopusCount = 0;
+  for (const [uid, count] of userTaskCount) {
+    if (count > octopusCount) {
+      octopusCount = count;
+      octopusId = uid;
+    }
+  }
+  if (octopusId && octopusCount > 0) {
+    previews.push({
+      key: "octopus",
+      userId: octopusId,
+      userName: userNameMap.get(octopusId) ?? "?",
+      metadata: { count: octopusCount },
+    });
+  }
+
   if (!pointLimit || pointLimit <= 0) return previews;
 
   // Aggregate per user
@@ -152,30 +176,6 @@ export function computeAchievementPreviews(
       userId: trollId,
       userName: userNameMap.get(trollId) ?? "?",
       metadata: { count: trollCount },
-    });
-  }
-
-  // Octopus: most tasks completed (count-based, all tasks)
-  const userTaskCount = new Map<string, number>();
-  for (const task of tasks) {
-    const uid = task.completed_by_user_id;
-    if (!uid) continue;
-    userTaskCount.set(uid, (userTaskCount.get(uid) ?? 0) + 1);
-  }
-  let octopusId: string | null = null;
-  let octopusCount = 0;
-  for (const [uid, count] of userTaskCount) {
-    if (count > octopusCount) {
-      octopusCount = count;
-      octopusId = uid;
-    }
-  }
-  if (octopusId && octopusCount > 0) {
-    previews.push({
-      key: "octopus",
-      userId: octopusId,
-      userName: userNameMap.get(octopusId) ?? "?",
-      metadata: { count: octopusCount },
     });
   }
 
