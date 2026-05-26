@@ -48,6 +48,9 @@ export const translations = {
     saving: "Saving...",
     deleting: "Deleting...",
     delete: "Delete",
+    skip: "Skip",
+    skipping: "Skipping...",
+    skip_task: "Skip Task",
     delete_task_title: "Delete Task?",
     delete_task_desc: "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
     delete_task_confirm: "Yes, Delete",
@@ -94,6 +97,8 @@ export const translations = {
 
     // History Page
     completed: "Completed",
+    skipped: "Skipped",
+    skipped_at: "Skipped",
     last_7_days: "Last 7 days",
     load_more: "Load More",
     no_completed_tasks: "No completed tasks this week.",
@@ -363,6 +368,9 @@ export const translations = {
     saving: "Guardando...",
     deleting: "Eliminando...",
     delete: "Eliminar",
+    skip: "Saltar",
+    skipping: "Saltando...",
+    skip_task: "Saltar Tarea",
     delete_task_title: "¿Eliminar tarea?",
     delete_task_desc: "¿Estás seguro de que quieres eliminar \"{title}\"? Esta acción no se puede deshacer.",
     delete_task_confirm: "Sí, eliminar",
@@ -409,6 +417,8 @@ export const translations = {
 
     // History Page
     completed: "Completado",
+    skipped: "Saltada",
+    skipped_at: "Saltada",
     last_7_days: "Últimos 7 días",
     load_more: "Cargar más",
     no_completed_tasks: "No hay tareas completadas esta semana.",

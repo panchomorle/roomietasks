@@ -61,6 +61,32 @@ export function useUnclaimTask() {
   });
 }
 
+export function useSkipTask() {
+  const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ taskId }: { taskId: string }) => {
+      const { data, error } = await supabase.rpc("skip_task_instance", {
+        p_task_id: taskId,
+      });
+
+      if (error) throw error;
+      const result = data as any;
+      if (result && !result.success) {
+        const err = new Error(result.message || result.error);
+        (err as any).code = result.error;
+        (err as any).details = result;
+        throw err;
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["task-instances"] });
+    },
+  });
+}
+
 export function useCompleteTask() {
   const supabase = createClient();
   const queryClient = useQueryClient();

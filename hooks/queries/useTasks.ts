@@ -64,7 +64,8 @@ export function useCompletedTasks(
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const { data, error } = await supabase
+      // Fetch completed tasks
+      const { data: completed, error: completedError } = await supabase
         .from("task_instances")
         .select("*, profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url), template:task_templates(*, creator:profiles!task_templates_created_by_fkey(full_name, avatar_url))")
         .eq("room_id", roomId!)
@@ -73,8 +74,29 @@ export function useCompletedTasks(
         .order("completed_at", { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (error) throw error;
-      return data;
+      if (completedError) throw completedError;
+
+      // Fetch skipped tasks
+      const { data: skipped, error: skippedError } = await supabase
+        .from("task_instances")
+        .select("*, profiles!task_instances_completed_by_user_id_profiles_fkey(full_name, avatar_url), template:task_templates(*, creator:profiles!task_templates_created_by_fkey(full_name, avatar_url))")
+        .eq("room_id", roomId!)
+        .eq("status", "skipped")
+        .gte("skipped_at", sevenDaysAgo.toISOString())
+        .order("skipped_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (skippedError) throw skippedError;
+
+      // Merge and sort by the event timestamp (completed_at or skipped_at) descending
+      const all = [...(completed || []), ...(skipped || [])];
+      all.sort((a, b) => {
+        const aTime = new Date(a.completed_at || a.skipped_at || a.created_at).getTime();
+        const bTime = new Date(b.completed_at || b.skipped_at || b.created_at).getTime();
+        return bTime - aTime;
+      });
+
+      return all;
     },
     enabled: !!roomId,
   });

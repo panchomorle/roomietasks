@@ -88,50 +88,74 @@ export default function HistoryPage() {
             <>
               <div className="space-y-3">
                 {tasks.map((task) => {
+                  const isSkipped = task.status === "skipped";
                   const completer = task.profiles as unknown as { full_name: string | null; avatar_url: string | null } | null;
+                  const eventDate = isSkipped ? task.skipped_at : task.completed_at;
                   return (
                     <div
                       key={task.id}
                       onClick={() => setSelectedTask(task)}
                       className="flex items-start sm:items-center gap-3 bg-white/[0.03] border border-white/[0.06] rounded-[20px] p-4 sm:p-5 animate-fade-in cursor-pointer hover:bg-white/[0.05] transition-colors"
                     >
-                      <div className="w-10 h-10 rounded-[14px] bg-success/15 flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0">
-                        <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                        </svg>
+                      {/* Icon: green check for completed, amber skip for skipped */}
+                      <div className={`w-10 h-10 rounded-[14px] flex items-center justify-center flex-shrink-0 mt-0.5 sm:mt-0 ${
+                        isSkipped ? "bg-amber-500/15" : "bg-success/15"
+                      }`}>
+                        {isSkipped ? (
+                          <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                          </svg>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-medium text-[15px] sm:text-base line-through opacity-60 leading-tight">{task.title}</h3>
+                        <h3 className={`text-white font-medium text-[15px] sm:text-base leading-tight ${
+                          isSkipped ? "opacity-50" : "line-through opacity-60"
+                        }`}>{task.title}</h3>
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5 text-[11px] sm:text-xs text-slate-500 font-medium tracking-wide">
-                          <span className={`${getPointColorClasses(task.points_reward, room?.point_limit ?? null).text}`}>{formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}</span>
-                          <span>•</span>
-                          <span>
-                            {t("by")}{" "}
-                            <span className="text-slate-400">
-                              {completer?.full_name || "Unknown"}
-                            </span>
-                          </span>
-                          {task.completed_at && (
+                          {isSkipped ? (
+                            <span className="text-amber-400 font-semibold">{t("skipped")}</span>
+                          ) : (
+                            <span className={`${getPointColorClasses(task.points_reward, room?.point_limit ?? null).text}`}>{formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}</span>
+                          )}
+                          {!isSkipped && completer?.full_name && (
                             <>
                               <span>•</span>
-                              <span className="capitalize">{formatTaskDate(task.completed_at, language as 'en' | 'es')}</span>
+                              <span>
+                                {t("by")}{" "}
+                                <span className="text-slate-400">
+                                  {completer.full_name}
+                                </span>
+                              </span>
+                            </>
+                          )}
+                          {eventDate && (
+                            <>
+                              <span>•</span>
+                              <span className="capitalize">{formatTaskDate(eventDate, language as 'en' | 'es')}</span>
                             </>
                           )}
                         </div>
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          uncompleteTask.mutate({ taskId: task.id });
-                        }}
-                        disabled={uncompleteTask.isPending}
-                        className="p-2.5 text-slate-500 hover:text-warning active:text-warning hover:bg-warning/10 active:bg-warning/15 rounded-xl transition-all -mr-1 sm:mr-0 flex-shrink-0"
-                        title={t("mark_as_incomplete")}
-                      >
-                        <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
-                        </svg>
-                      </button>
+                      {/* Undo button only for completed tasks */}
+                      {!isSkipped && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            uncompleteTask.mutate({ taskId: task.id });
+                          }}
+                          disabled={uncompleteTask.isPending}
+                          className="p-2.5 text-slate-500 hover:text-warning active:text-warning hover:bg-warning/10 active:bg-warning/15 rounded-xl transition-all -mr-1 sm:mr-0 flex-shrink-0"
+                          title={t("mark_as_incomplete")}
+                        >
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+                          </svg>
+                        </button>
+                      )}
                     </div>
                   );
                 })}

@@ -324,6 +324,7 @@ export type Database = {
           id: string
           points_reward: number
           room_id: string
+          skipped_at: string | null
           status: Database["public"]["Enums"]["task_status"]
           template_id: string
           title: string
@@ -338,6 +339,7 @@ export type Database = {
           id?: string
           points_reward?: number
           room_id: string
+          skipped_at?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           template_id: string
           title: string
@@ -352,6 +354,7 @@ export type Database = {
           id?: string
           points_reward?: number
           room_id?: string
+          skipped_at?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           template_id?: string
           title?: string
@@ -466,10 +469,11 @@ export type Database = {
       }
       is_room_admin: { Args: { p_room_id: string }; Returns: boolean }
       is_room_member: { Args: { p_room_id: string }; Returns: boolean }
+      skip_task_instance: { Args: { p_task_id: string }; Returns: Json }
       unclaim_task_instance: { Args: { p_task_id: string }; Returns: Json }
     }
     Enums: {
-      task_status: "pending" | "completed"
+      task_status: "pending" | "completed" | "skipped"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -597,7 +601,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      task_status: ["pending", "completed"],
+      task_status: ["pending", "completed", "skipped"],
     },
   },
 } as const

@@ -24,6 +24,7 @@ export function TaskDetailsDrawer({ task, onClose }: TaskDetailsDrawerProps) {
 
   if (!task) return null;
 
+  const isSkipped = task.status === "skipped";
   const pointColor = getPointColorClasses(task.points_reward, room?.point_limit ?? null);
   
   // Extract related profiles
@@ -44,14 +45,30 @@ export function TaskDetailsDrawer({ task, onClose }: TaskDetailsDrawerProps) {
             <h2 className="text-2xl font-black text-white leading-tight mb-2">
               {task.title}
             </h2>
-            <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border ${pointColor.bg} ${pointColor.border} ${pointColor.text}`}>
-              {formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}
-            </div>
+            {isSkipped ? (
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border bg-amber-500/10 border-amber-500/20 text-amber-400">
+                {t("skipped")}
+              </div>
+            ) : (
+              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold border ${pointColor.bg} ${pointColor.border} ${pointColor.text}`}>
+                {formatPoints(task.points_reward, language as 'en' | 'es')} {t("pts")}
+              </div>
+            )}
           </div>
-          <div className="w-12 h-12 rounded-[16px] bg-success/15 flex items-center justify-center flex-shrink-0 border border-success/20">
-            <svg className="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
+          <div className={`w-12 h-12 rounded-[16px] flex items-center justify-center flex-shrink-0 border ${
+            isSkipped
+              ? "bg-amber-500/15 border-amber-500/20"
+              : "bg-success/15 border-success/20"
+          }`}>
+            {isSkipped ? (
+              <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061A1.125 1.125 0 013 16.811V8.69zM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 010 1.954l-7.108 4.061a1.125 1.125 0 01-1.683-.977V8.69z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-success" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            )}
           </div>
         </div>
 
@@ -67,30 +84,45 @@ export function TaskDetailsDrawer({ task, onClose }: TaskDetailsDrawerProps) {
 
         {/* Details Grid */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          {/* Completed By */}
+          {/* Completed By / Skipped At */}
           <div className="bg-white/[0.02] border border-white/5 rounded-xl p-3">
             <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-              {t("completed_by") || "Completed By"}
+              {isSkipped ? (t("skipped_at") || "Skipped") : (t("completed_by") || "Completed By")}
             </p>
-            <button
-              onClick={() => {
-                const completerId = task.completed_by_user_id;
-                if (completerId) {
-                  onClose();
-                  router.push(`/dashboard/profile/${completerId}`);
-                }
-              }}
-              className="flex items-center gap-2 hover:opacity-75 transition-opacity text-left w-full"
-            >
-              <div className="w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
-                {completerName.charAt(0).toUpperCase()}
-              </div>
-              <p className="text-sm font-semibold text-white truncate hover:text-brand-300 transition-colors">{completerName}</p>
-            </button>
-            {task.completed_at && (
-              <p className="text-xs text-slate-400 mt-1.5 capitalize">
-                {formatTaskDate(task.completed_at, language as 'en' | 'es')}
-              </p>
+            {isSkipped ? (
+              <>
+                <p className="text-sm font-semibold text-amber-400">
+                  {t("skipped")}
+                </p>
+                {task.skipped_at && (
+                  <p className="text-xs text-slate-400 mt-1.5 capitalize">
+                    {formatTaskDate(task.skipped_at, language as 'en' | 'es')}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    const completerId = task.completed_by_user_id;
+                    if (completerId) {
+                      onClose();
+                      router.push(`/dashboard/profile/${completerId}`);
+                    }
+                  }}
+                  className="flex items-center gap-2 hover:opacity-75 transition-opacity text-left w-full"
+                >
+                  <div className="w-5 h-5 rounded-full bg-brand-500/20 flex items-center justify-center text-[10px] font-bold text-brand-400 flex-shrink-0">
+                    {completerName.charAt(0).toUpperCase()}
+                  </div>
+                  <p className="text-sm font-semibold text-white truncate hover:text-brand-300 transition-colors">{completerName}</p>
+                </button>
+                {task.completed_at && (
+                  <p className="text-xs text-slate-400 mt-1.5 capitalize">
+                    {formatTaskDate(task.completed_at, language as 'en' | 'es')}
+                  </p>
+                )}
+              </>
             )}
           </div>
 
